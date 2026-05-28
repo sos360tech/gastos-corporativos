@@ -328,7 +328,7 @@ function renderHistory(){
 }
 
 function eRow(e){
-  return '<div class="expense-item" onclick="openDetail(\''+e.id+'\')">'+
+  return '<div class="expense-item" data-id="'+e.id+'" onclick="openDetail(this.dataset.id)">'+
     '<div class="expense-icon">&#128179;</div>'+
     '<div class="expense-info"><p class="expense-merchant">'+e.merchant+'</p>'+
     '<p class="expense-meta">'+fDate(e.date)+' - '+e.area+'</p></div>'+
@@ -428,7 +428,7 @@ function openDetail(id){
     '<div class="detail-row"><span class="key">Parcelas</span><span class="val">'+inst+'</span></div>'+
     (e.desc?'<div class="detail-row"><span class="key">Descricao</span><span class="val">'+e.desc+'</span></div>':'')+
     (e.receipt?'<img class="modal-img" src="'+e.receipt+'" alt="Comprovante" />':'')+
-    '<button class="btn-danger" onclick="deleteExpense(\''+e.id+'\')">Excluir lancamento</button>';
+    '<button class="btn-danger" data-id="'+e.id+'" onclick="deleteExpense(this.dataset.id)">Excluir lancamento</button>';
   document.getElementById('modal-overlay').classList.add('open');
 }
 function closeModal(ev){ if(ev.target===document.getElementById('modal-overlay')) document.getElementById('modal-overlay').classList.remove('open'); }
