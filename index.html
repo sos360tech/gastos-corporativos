@@ -299,6 +299,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyCCP8RfvV2jDCOQbu2OvuZfMOMD9l-LePs",
@@ -309,6 +310,7 @@ const app = initializeApp({
   appId: "1:777103398612:web:863f77a412c50860b64d41"
 });
 const db = getFirestore(app);
+const storage = getStorage(app);
 const col = collection(db, "expenses");
 
 let expenses = [];
@@ -443,7 +445,7 @@ window.rmFile = () => {
   document.getElementById("f-file").value = "";
 };
 
-window.saveExp = () => {
+window.saveExp = async () => {
   const merchant = document.getElementById("f-merchant").value.trim();
   const amount = document.getElementById("f-amount").value;
   const area = document.getElementById("f-area").value;
@@ -456,22 +458,33 @@ window.saveExp = () => {
   if (!user) { toast("Selecione o responsavel"); return; }
   if (!cat) { toast("Selecione a categoria"); return; }
   dot("busy");
-  addDoc(col, {
-    date: document.getElementById("f-date").value,
-    time: document.getElementById("f-time").value,
-    merchant, amount: parseFloat(amount),
-    installments: inst ? inst.dataset.v : "1",
-    area, user, category: cat.dataset.v,
-    desc: document.getElementById("f-desc").value.trim(),
-    receipt: receipt || null,
-    createdAt: new Date().toISOString()
-  }).then(() => {
+  try {
+    let receiptURL = null;
+    if (receipt) {
+      toast("Enviando foto...");
+      const imgRef = ref(storage, "receipts/" + Date.now() + ".jpg");
+      await uploadString(imgRef, receipt, "data_url");
+      receiptURL = await getDownloadURL(imgRef);
+    }
+    await addDoc(col, {
+      date: document.getElementById("f-date").value,
+      time: document.getElementById("f-time").value,
+      merchant, amount: parseFloat(amount),
+      installments: inst ? inst.dataset.v : "1",
+      area, user, category: cat.dataset.v,
+      desc: document.getElementById("f-desc").value.trim(),
+      receipt: receiptURL,
+      createdAt: new Date().toISOString()
+    });
     toast("Lancamento salvo!");
     setTimeout(() => {
       initForm();
       goTo("home", document.getElementById("nb-home"));
     }, 800);
-  }).catch(err => { toast("Erro: " + err.message); dot(""); });
+  } catch(err) {
+    toast("Erro: " + err.message);
+    dot("");
+  }
 };
 
 window.openDetail = id => {
@@ -494,13 +507,18 @@ window.openDetail = id => {
 
 window.closeModal = ev => { if (ev.target === document.getElementById("modal-ov")) document.getElementById("modal-ov").classList.remove("open"); };
 
-window.delExp = id => {
+window.delExp = async id => {
   if (!confirm("Excluir este lancamento?")) return;
   dot("busy");
-  deleteDoc(doc(db, "expenses", id)).then(() => {
+  try {
+    const e = expenses.find(x => x.id === id);
+    if (e && e.receipt) {
+      try { await deleteObject(ref(storage, e.receipt)); } catch(_) {}
+    }
+    await deleteDoc(doc(db, "expenses", id));
     document.getElementById("modal-ov").classList.remove("open");
     toast("Lancamento removido");
-  }).catch(err => { toast("Erro: " + err.message); dot(""); });
+  } catch(err) { toast("Erro: " + err.message); dot(""); }
 };
 
 window.doExport = () => {
