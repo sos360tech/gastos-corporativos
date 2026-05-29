@@ -299,7 +299,6 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyCCP8RfvV2jDCOQbu2OvuZfMOMD9l-LePs",
@@ -310,7 +309,6 @@ const app = initializeApp({
   appId: "1:777103398612:web:863f77a412c50860b64d41"
 });
 const db = getFirestore(app);
-const storage = getStorage(app);
 const col = collection(db, "expenses");
 
 let expenses = [];
@@ -426,15 +424,26 @@ document.querySelectorAll("#f-cat .chip").forEach(c => {
 
 window.onFile = input => {
   const f = input.files[0]; if (!f) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    receipt = ev.target.result;
-    document.getElementById("f-prev").src = receipt;
-    document.getElementById("f-prev-wrap").style.display = "block";
-    document.getElementById("f-zone").classList.add("has-file");
-    document.getElementById("f-ico").textContent = "&#10003;";
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      // Compress: max 800px wide, quality 0.5
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      receipt = canvas.toDataURL("image/jpeg", 0.5);
+      document.getElementById("f-prev").src = receipt;
+      document.getElementById("f-prev-wrap").style.display = "block";
+      document.getElementById("f-zone").classList.add("has-file");
+      document.getElementById("f-ico").textContent = "&#10003;";
+    };
+    img.src = ev.target.result;
   };
-  r.readAsDataURL(f);
+  reader.readAsDataURL(f);
 };
 
 window.rmFile = () => {
@@ -459,13 +468,6 @@ window.saveExp = async () => {
   if (!cat) { toast("Selecione a categoria"); return; }
   dot("busy");
   try {
-    let receiptURL = null;
-    if (receipt) {
-      toast("Enviando foto...");
-      const imgRef = ref(storage, "receipts/" + Date.now() + ".jpg");
-      await uploadString(imgRef, receipt, "data_url");
-      receiptURL = await getDownloadURL(imgRef);
-    }
     await addDoc(col, {
       date: document.getElementById("f-date").value,
       time: document.getElementById("f-time").value,
@@ -473,7 +475,7 @@ window.saveExp = async () => {
       installments: inst ? inst.dataset.v : "1",
       area, user, category: cat.dataset.v,
       desc: document.getElementById("f-desc").value.trim(),
-      receipt: receiptURL,
+      receipt: receipt || null,
       createdAt: new Date().toISOString()
     });
     toast("Lancamento salvo!");
@@ -511,10 +513,6 @@ window.delExp = async id => {
   if (!confirm("Excluir este lancamento?")) return;
   dot("busy");
   try {
-    const e = expenses.find(x => x.id === id);
-    if (e && e.receipt) {
-      try { await deleteObject(ref(storage, e.receipt)); } catch(_) {}
-    }
     await deleteDoc(doc(db, "expenses", id));
     document.getElementById("modal-ov").classList.remove("open");
     toast("Lancamento removido");
