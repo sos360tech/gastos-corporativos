@@ -222,8 +222,9 @@
         <input type="file" id="f-file" accept="image/*" capture="environment" onchange="onFile(this)">
         <div class="rz-ico" id="f-ico">&#128248;</div>
         <p>Tirar foto ou anexar comprovante</p>
-        <small>JPG ou PNG</small>
+        <small>JPG ou PNG - comprimido automaticamente</small>
       </div>
+      <p id="f-size" style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center"></p>
       <div id="f-prev-wrap" style="display:none" class="rz-preview">
         <img id="f-prev" src="" alt="Comprovante">
         <button class="rz-rm" onclick="rmFile()">&#10005;</button>
@@ -411,6 +412,7 @@ function initForm() {
   document.getElementById("f-zone").classList.remove("has-file");
   document.getElementById("f-ico").textContent = "&#128248;";
   document.getElementById("f-file").value = "";
+  document.getElementById("f-size").textContent = "";
   document.querySelectorAll("#f-inst .chip").forEach(c => c.classList.toggle("active", c.dataset.v==="1"));
   document.querySelectorAll("#f-cat .chip").forEach(c => c.classList.remove("active"));
 }
@@ -428,18 +430,29 @@ window.onFile = input => {
   reader.onload = ev => {
     const img = new Image();
     img.onload = () => {
-      // Compress: max 800px wide, quality 0.5
-      const MAX = 800;
+      // Aggressive compression for mobile cameras
+      // Target: under 500KB base64 (~375KB binary)
+      const MAX = 600;
       let w = img.width, h = img.height;
-      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+      else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
       const canvas = document.createElement("canvas");
       canvas.width = w; canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      receipt = canvas.toDataURL("image/jpeg", 0.5);
+      // Start at quality 0.4, reduce until under 700KB
+      let quality = 0.4;
+      let compressed = canvas.toDataURL("image/jpeg", quality);
+      while (compressed.length > 700000 && quality > 0.1) {
+        quality = Math.round((quality - 0.1) * 10) / 10;
+        compressed = canvas.toDataURL("image/jpeg", quality);
+      }
+      receipt = compressed;
+      const kb = Math.round(receipt.length * 0.75 / 1024);
       document.getElementById("f-prev").src = receipt;
       document.getElementById("f-prev-wrap").style.display = "block";
       document.getElementById("f-zone").classList.add("has-file");
       document.getElementById("f-ico").textContent = "&#10003;";
+      document.getElementById("f-size").textContent = kb + " KB";
     };
     img.src = ev.target.result;
   };
@@ -452,6 +465,7 @@ window.rmFile = () => {
   document.getElementById("f-zone").classList.remove("has-file");
   document.getElementById("f-ico").textContent = "&#128248;";
   document.getElementById("f-file").value = "";
+  document.getElementById("f-size").textContent = "";
 };
 
 window.saveExp = async () => {
@@ -484,7 +498,9 @@ window.saveExp = async () => {
       goTo("home", document.getElementById("nb-home"));
     }, 800);
   } catch(err) {
-    toast("Erro: " + err.message);
+    const msg = err.message || String(err);
+    toast("Erro ao salvar: " + msg.slice(0, 60));
+    console.error("saveExp error:", err);
     dot("");
   }
 };
