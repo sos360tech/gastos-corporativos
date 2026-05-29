@@ -363,7 +363,7 @@ function renderHome() {
   document.getElementById("top-area").textContent = ta ? ta[0] : "--";
   var el = document.getElementById("home-list");
   var sorted = f.slice().sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
-  if (!sorted.length) { el.innerHTML = "<div class="empty-state"><div class="icon">&#128193;</div><p>Nenhum lancamento em " + MP[m] + "</p></div>"; return; }
+  if (!sorted.length) { el.innerHTML = '<div class="empty-state"><div class="icon">&#128193;</div><p>Nenhum lancamento em ' + MP[m] + '</p></div>'; return; }
   el.innerHTML = sorted.slice(0,5).map(eRow).join("");
 }
 
@@ -371,16 +371,16 @@ function renderHistory() {
   var el = document.getElementById("history-list");
   var data = expenses.slice();
   if (currentFilter !== "todos") data = data.filter(function(e){ return e.area === currentFilter; });
-  if (!data.length) { el.innerHTML = "<div class="empty-state"><div class="icon">&#128269;</div><p>Nenhum resultado</p></div>"; return; }
+  if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">&#128269;</div><p>Nenhum resultado</p></div>'; return; }
   el.innerHTML = data.map(eRow).join("");
 }
 
 function eRow(e) {
-  return "<div class="expense-item" data-id="" + e.id + "" onclick="openDetail(this.dataset.id)">" +
-    "<div class="expense-icon">&#128179;</div>" +
-    "<div class="expense-info"><p class="expense-merchant">" + e.merchant + "</p>" +
-    "<p class="expense-meta">" + fDate(e.date) + " - " + e.area + "</p></div>" +
-    "<span class="expense-amount">" + fBRL(e.amount) + "</span></div>";
+  return '<div class="expense-item" data-id="' + e.id + '" onclick="openDetail(this.dataset.id)">' +
+    '<div class="expense-icon">&#128179;</div>' +
+    '<div class="expense-info"><p class="expense-merchant">' + e.merchant + '</p>' +
+    '<p class="expense-meta">' + fDate(e.date) + ' - ' + e.area + '</p></div>' +
+    '<span class="expense-amount">' + fBRL(e.amount) + '</span></div>';
 }
 
 document.querySelectorAll("#filter-row .filter-chip").forEach(function(c) {
@@ -480,15 +480,15 @@ function openDetail(id) {
   if (!e) return;
   var inst = e.installments === "1" ? "A vista" : e.installments + "x";
   document.getElementById("modal-body").innerHTML =
-    "<p class="modal-title">" + e.merchant + "</p>" +
-    "<p class="modal-sub">" + fDate(e.date) + (e.time ? " as " + e.time : "") + " - " + e.category + "</p>" +
-    "<p class="detail-amount">" + fBRL(e.amount) + "</p>" +
-    "<div class="detail-row"><span class="key">Centro de custo</span><span class="val">" + e.area + "</span></div>" +
-    "<div class="detail-row"><span class="key">Categoria</span><span class="val">" + e.category + "</span></div>" +
-    "<div class="detail-row"><span class="key">Parcelas</span><span class="val">" + inst + "</span></div>" +
-    (e.desc ? "<div class="detail-row"><span class="key">Descricao</span><span class="val">" + e.desc + "</span></div>" : "") +
-    (e.receipt ? "<img class="modal-img" src="" + e.receipt + "" alt="Comprovante" />" : "") +
-    "<button class="btn-danger" data-id="" + e.id + "" onclick="deleteExpense(this.dataset.id)">Excluir lancamento</button>";
+    '<p class="modal-title">' + e.merchant + '</p>' +
+    '<p class="modal-sub">' + fDate(e.date) + (e.time ? " as " + e.time : "") + ' - ' + e.category + '</p>' +
+    '<p class="detail-amount">' + fBRL(e.amount) + '</p>' +
+    '<div class="detail-row"><span class="key">Centro de custo</span><span class="val">' + e.area + '</span></div>' +
+    '<div class="detail-row"><span class="key">Categoria</span><span class="val">' + e.category + '</span></div>' +
+    '<div class="detail-row"><span class="key">Parcelas</span><span class="val">' + inst + '</span></div>' +
+    (e.desc ? '<div class="detail-row"><span class="key">Descricao</span><span class="val">' + e.desc + '</span></div>' : '') +
+    (e.receipt ? '<img class="modal-img" src="' + e.receipt + '" alt="Comprovante" />' : '') +
+    '<button class="btn-danger" data-id="' + e.id + '" onclick="deleteExpense(this.dataset.id)">Excluir lancamento</button>';
   document.getElementById("modal-overlay").classList.add("open");
 }
 window.openDetail = openDetail;
