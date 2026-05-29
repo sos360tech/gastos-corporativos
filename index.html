@@ -161,16 +161,21 @@
       </div>
     </div>
     <div class="form-section">
-      <p class="form-section-title">Area responsavel *</p>
-      <div class="area-grid" id="f-area">
-        <button class="area-btn" data-v="Tecnologia"><span class="emoji">&#128187;</span>Tecnologia</button>
-        <button class="area-btn" data-v="Marketing"><span class="emoji">&#128227;</span>Marketing</button>
-        <button class="area-btn" data-v="Financeiro"><span class="emoji">&#128202;</span>Financeiro</button>
-        <button class="area-btn" data-v="RH"><span class="emoji">&#128101;</span>RH</button>
-        <button class="area-btn" data-v="Operacoes"><span class="emoji">&#9881;</span>Operacoes</button>
-        <button class="area-btn" data-v="Juridico"><span class="emoji">&#9878;</span>Juridico</button>
-        <button class="area-btn" data-v="Comercial"><span class="emoji">&#128188;</span>Comercial</button>
-        <button class="area-btn" data-v="Diretoria"><span class="emoji">&#127970;</span>Diretoria</button>
+      <p class="form-section-title">Centro de custo *</p>
+      <div class="field">
+        <select id="f-area">
+          <option value="">Selecione o centro de custo...</option>
+          <option value="MATRIZ">MATRIZ</option>
+          <option value="SALOBO">SALOBO</option>
+          <option value="S11D">S11D</option>
+          <option value="CARAJAS">CARAJAS</option>
+          <option value="SAO LUIS - SEDE">SAO LUIS - SEDE</option>
+          <option value="SAO LUIS - VALE">SAO LUIS - VALE</option>
+          <option value="PARAGOMINAS - ETE">PARAGOMINAS - ETE</option>
+          <option value="PARAGOMINAS - CIP">PARAGOMINAS - CIP</option>
+          <option value="SANTAREM">SANTAREM</option>
+          <option value="MARABA">MARABA</option>
+        </select>
       </div>
     </div>
     <div class="form-section">
@@ -212,14 +217,16 @@
   <div class="topbar"><p class="topbar-label">Registro</p><p class="topbar-title">Historico</p></div>
   <div class="filter-row" id="filter-row">
     <span class="filter-chip active" data-v="todos">Todos</span>
-    <span class="filter-chip" data-v="Tecnologia">&#128187; Tecnologia</span>
-    <span class="filter-chip" data-v="Marketing">&#128227; Marketing</span>
-    <span class="filter-chip" data-v="Financeiro">&#128202; Financeiro</span>
-    <span class="filter-chip" data-v="RH">&#128101; RH</span>
-    <span class="filter-chip" data-v="Operacoes">&#9881; Operacoes</span>
-    <span class="filter-chip" data-v="Juridico">&#9878; Juridico</span>
-    <span class="filter-chip" data-v="Comercial">&#128188; Comercial</span>
-    <span class="filter-chip" data-v="Diretoria">&#127970; Diretoria</span>
+    <span class="filter-chip" data-v="MATRIZ">MATRIZ</span>
+    <span class="filter-chip" data-v="SALOBO">SALOBO</span>
+    <span class="filter-chip" data-v="S11D">S11D</span>
+    <span class="filter-chip" data-v="CARAJAS">CARAJAS</span>
+    <span class="filter-chip" data-v="SAO LUIS - SEDE">SAO LUIS - SEDE</span>
+    <span class="filter-chip" data-v="SAO LUIS - VALE">SAO LUIS - VALE</span>
+    <span class="filter-chip" data-v="PARAGOMINAS - ETE">PARAGOMINAS - ETE</span>
+    <span class="filter-chip" data-v="PARAGOMINAS - CIP">PARAGOMINAS - CIP</span>
+    <span class="filter-chip" data-v="SANTAREM">SANTAREM</span>
+    <span class="filter-chip" data-v="MARABA">MARABA</span>
   </div>
   <div class="list-card"><div id="history-list"></div></div>
 </div>
@@ -352,16 +359,14 @@ function initForm(){
   document.getElementById('f-zone-icon').textContent='&#128248;';
   document.getElementById('f-file').value='';
   document.querySelectorAll('#f-installments .chip').forEach(function(c){ c.classList.toggle('active',c.dataset.v==='1'); });
-  document.querySelectorAll('#f-area .area-btn').forEach(function(c){ c.classList.remove('active'); });
+  var areaSelect = document.getElementById('f-area'); if(areaSelect) areaSelect.value = '';
   document.querySelectorAll('#f-category .chip').forEach(function(c){ c.classList.remove('active'); });
 }
 
 document.querySelectorAll('#f-installments .chip').forEach(function(c){
   c.onclick=function(){ document.querySelectorAll('#f-installments .chip').forEach(function(x){ x.classList.remove('active'); }); c.classList.add('active'); };
 });
-document.querySelectorAll('#f-area .area-btn').forEach(function(b){
-  b.onclick=function(){ document.querySelectorAll('#f-area .area-btn').forEach(function(x){ x.classList.remove('active'); }); b.classList.add('active'); };
-});
+// area is now a select dropdown - no click handlers needed
 document.querySelectorAll('#f-category .chip').forEach(function(c){
   c.onclick=function(){ document.querySelectorAll('#f-category .chip').forEach(function(x){ x.classList.remove('active'); }); c.classList.add('active'); };
 });
@@ -389,11 +394,12 @@ function removeReceipt(){
 function saveExpense(){
   var m=document.getElementById('f-merchant').value.trim();
   var v=document.getElementById('f-amount').value;
-  var a=document.querySelector('#f-area .area-btn.active');
+  var a=document.getElementById('f-area');
+  var aVal = a ? a.value : '';
   var c=document.querySelector('#f-category .chip.active');
   if(!m){ toast('Informe o estabelecimento'); return; }
   if(!v||parseFloat(v)<=0){ toast('Informe o valor'); return; }
-  if(!a){ toast('Selecione a area'); return; }
+  if(!aVal){ toast('Selecione o centro de custo'); return; }
   if(!c){ toast('Selecione a categoria'); return; }
   var inst=document.querySelector('#f-installments .chip.active');
   expenses.unshift({
@@ -402,7 +408,7 @@ function saveExpense(){
     time: document.getElementById('f-time').value,
     merchant: m, amount: parseFloat(v),
     installments: inst?inst.dataset.v:'1',
-    area: a.dataset.v, category: c.dataset.v,
+    area: aVal, category: c.dataset.v,
     desc: document.getElementById('f-desc').value.trim(),
     receipt: receiptDataUrl||null,
     createdAt: new Date().toISOString()
