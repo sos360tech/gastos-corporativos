@@ -564,12 +564,18 @@ window.delExp = async id => {
 
 window.doExport = () => {
   const header = "Data,Horario,Responsavel,Estabelecimento,Valor,Parcelas,Centro de Custo,Categoria,Descricao,Comprovante";
-  const rows = expenses.map(e => [
-    e.date, e.time||"", e.user||"", '"'+e.merchant+'"', e.amount,
-    e.installments, e.area, e.category,
-    '"'+(e.desc||"").replace(/"/g,'""')+'"',
-    e.receipt||""
-  ].join(","));
+  const rows = expenses.map(e => {
+    let receiptCol = "";
+    if (e.receipt) {
+      receiptCol = e.receipt.startsWith("http") ? e.receipt : "(foto salva no app - abrir pelo celular)";
+    }
+    return [
+      e.date, e.time||"", e.user||"", '"'+e.merchant+'"', e.amount,
+      e.installments, e.area, e.category,
+      '"'+(e.desc||"").replace(/"/g,'""')+'"',
+      receiptCol
+    ].join(",");
+  });
   const csv = header + "\n" + rows.join("\n");
   const b = new Blob([csv], {type:"text/csv;charset=utf-8;"});
   const a = document.createElement("a");
