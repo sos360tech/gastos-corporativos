@@ -482,6 +482,25 @@ window.saveExp = async () => {
   if (!cat) { toast("Selecione a categoria"); return; }
   dot("busy");
   try {
+    let receiptURL = null;
+    let receiptThumb = null;
+    if (receipt) {
+      toast("Enviando foto...");
+      const base64data = receipt.split(",")[1];
+      const fd = new FormData();
+      fd.append("key", "854165a6ff8b8d4ef385e3650754105f");
+      fd.append("image", base64data);
+      fd.append("expiration", "15552000"); // 6 months
+      const imgResp = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: fd });
+      const imgData = await imgResp.json();
+      if (imgData.success) {
+        receiptURL = imgData.data.url;
+        receiptThumb = imgData.data.thumb ? imgData.data.thumb.url : imgData.data.url;
+      } else {
+        toast("Erro na foto, salvando sem comprovante...");
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    }
     await addDoc(col, {
       date: document.getElementById("f-date").value,
       time: document.getElementById("f-time").value,
@@ -489,7 +508,8 @@ window.saveExp = async () => {
       installments: inst ? inst.dataset.v : "1",
       area, user, category: cat.dataset.v,
       desc: document.getElementById("f-desc").value.trim(),
-      receipt: receipt || null,
+      receipt: receiptURL,
+      receiptThumb: receiptThumb,
       createdAt: new Date().toISOString()
     });
     toast("Lancamento salvo!");
@@ -517,7 +537,9 @@ window.openDetail = id => {
     + '<div class="det-row"><span class="k">Categoria</span><span class="v">' + e.category + '</span></div>'
     + '<div class="det-row"><span class="k">Parcelas</span><span class="v">' + inst + '</span></div>';
   if (e.desc) html += '<div class="det-row"><span class="k">Descricao</span><span class="v">' + e.desc + '</span></div>';
-  if (e.receipt) html += '<img class="modal-img" src="' + e.receipt + '" alt="Comprovante">';
+  if (e.receipt) html += '<a href="' + e.receipt + '" target="_blank" style="display:block;margin-top:12px">' +
+    '<img class="modal-img" src="' + (e.receiptThumb || e.receipt) + '" alt="Comprovante" style="cursor:pointer">' +
+    '<p style="font-size:11px;color:var(--accent);text-align:center;margin-top:6px">&#128279; Abrir comprovante em tamanho original</p></a>';
   html += '<button class="btn-d" data-id="' + e.id + '" onclick="delExp(this.dataset.id)">Excluir lancamento</button>';
   document.getElementById("modal-body").innerHTML = html;
   document.getElementById("modal-ov").classList.add("open");
@@ -536,11 +558,12 @@ window.delExp = async id => {
 };
 
 window.doExport = () => {
-  const header = "Data,Horario,Responsavel,Estabelecimento,Valor,Parcelas,Centro de Custo,Categoria,Descricao";
+  const header = "Data,Horario,Responsavel,Estabelecimento,Valor,Parcelas,Centro de Custo,Categoria,Descricao,Comprovante";
   const rows = expenses.map(e => [
     e.date, e.time||"", e.user||"", '"'+e.merchant+'"', e.amount,
     e.installments, e.area, e.category,
-    '"'+(e.desc||"").replace(/"/g,'""')+'"'
+    '"'+(e.desc||"").replace(/"/g,'""')+'"',
+    e.receipt||""
   ].join(","));
   const csv = header + "\n" + rows.join("\n");
   const b = new Blob([csv], {type:"text/csv;charset=utf-8;"});
