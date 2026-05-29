@@ -54,6 +54,8 @@
   .field input,.field select,.field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-family:var(--font); font-size:15px; padding:12px 14px; outline:none; transition:border-color 0.2s; -webkit-appearance:none; appearance:none; }
   .field input:focus,.field select:focus,.field textarea:focus { border-color:var(--accent); }
   .field textarea { resize:none; height:80px; }
+  .field select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
+  .field select option { background:#1f1f1f; }
   .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .amount-wrap { position:relative; }
   .amount-prefix { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-family:var(--mono); font-size:14px; color:var(--text2); }
@@ -61,10 +63,6 @@
   .chips { display:flex; flex-wrap:wrap; gap:8px; }
   .chip { font-size:13px; padding:7px 14px; border:1px solid var(--border); border-radius:99px; cursor:pointer; color:var(--text2); background:var(--bg2); transition:all 0.15s; font-family:var(--font); }
   .chip.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
-  .area-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-  .area-btn { display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 4px; border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; background:var(--bg2); transition:all 0.15s; font-size:11px; color:var(--text2); font-family:var(--font); text-align:center; }
-  .area-btn .emoji { font-size:20px; }
-  .area-btn.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
   .receipt-zone { border:1px dashed var(--border2); border-radius:var(--radius-sm); padding:28px 16px; text-align:center; cursor:pointer; position:relative; transition:all 0.2s; }
   .receipt-zone.has-file { border-color:var(--accent); border-style:solid; }
   .receipt-zone input { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; }
@@ -105,15 +103,20 @@
   .month-row { display:flex; align-items:center; justify-content:space-between; padding:0 20px; margin-bottom:16px; }
   .month-label { font-size:16px; font-weight:600; }
   .month-nav { background:var(--bg2); border:1px solid var(--border); color:var(--text); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }
+  .sync-dot { width:8px; height:8px; border-radius:50%; background:var(--text3); display:inline-block; margin-left:6px; vertical-align:middle; transition:background 0.3s; }
+  .sync-dot.synced { background:var(--accent); }
+  .sync-dot.syncing { background:#f5a623; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 </style>
 </head>
 <body>
 
+<!-- HOME -->
 <div class="screen active" id="screen-home">
   <div class="topbar">
-    <p class="topbar-label">Cartao Corporativo</p>
+    <p class="topbar-label">SOS360 - Cartao Corporativo</p>
     <div class="topbar-row">
-      <p class="topbar-title">Visao geral</p>
+      <p class="topbar-title">Visao geral <span class="sync-dot" id="sync-dot" title="Status sync"></span></p>
       <span class="topbar-pill" id="home-month-pill">Mai 2026</span>
     </div>
   </div>
@@ -126,12 +129,13 @@
     <div class="summary-card accent"><p class="label">Total do mes</p><p class="value" id="total-month">R$ 0</p></div>
     <div class="summary-card"><p class="label">Lancamentos</p><p class="value" id="total-count">0</p></div>
     <div class="summary-card"><p class="label">Maior gasto</p><p class="value" id="top-expense">--</p></div>
-    <div class="summary-card"><p class="label">Area top</p><p class="value" id="top-area" style="font-size:14px;font-family:var(--font);">--</p></div>
+    <div class="summary-card"><p class="label">Centro top</p><p class="value" id="top-area" style="font-size:12px;font-family:var(--font);">--</p></div>
   </div>
   <p class="section-title">Ultimos lancamentos</p>
   <div class="list-card"><div id="home-list"></div></div>
 </div>
 
+<!-- NOVO -->
 <div class="screen" id="screen-novo">
   <div class="topbar"><p class="topbar-label">Registrar</p><p class="topbar-title">Novo gasto</p></div>
   <div class="form-scroll">
@@ -141,7 +145,7 @@
         <div class="field"><label>Data *</label><input type="date" id="f-date" /></div>
         <div class="field"><label>Horario</label><input type="time" id="f-time" /></div>
       </div>
-      <div class="field"><label>Estabelecimento *</label><input type="text" id="f-merchant" placeholder="Ex: Amazon, Uber..." maxlength="80" /></div>
+      <div class="field"><label>Estabelecimento *</label><input type="text" id="f-merchant" placeholder="Ex: Amazon, Posto Shell..." maxlength="80" /></div>
       <div class="field">
         <label>Valor *</label>
         <div class="amount-wrap">
@@ -213,6 +217,7 @@
   </div>
 </div>
 
+<!-- HISTORICO -->
 <div class="screen" id="screen-history">
   <div class="topbar"><p class="topbar-label">Registro</p><p class="topbar-title">Historico</p></div>
   <div class="filter-row" id="filter-row">
@@ -221,35 +226,36 @@
     <span class="filter-chip" data-v="SALOBO">SALOBO</span>
     <span class="filter-chip" data-v="S11D">S11D</span>
     <span class="filter-chip" data-v="CARAJAS">CARAJAS</span>
-    <span class="filter-chip" data-v="SAO LUIS - SEDE">SAO LUIS - SEDE</span>
-    <span class="filter-chip" data-v="SAO LUIS - VALE">SAO LUIS - VALE</span>
-    <span class="filter-chip" data-v="PARAGOMINAS - ETE">PARAGOMINAS - ETE</span>
-    <span class="filter-chip" data-v="PARAGOMINAS - CIP">PARAGOMINAS - CIP</span>
+    <span class="filter-chip" data-v="SAO LUIS - SEDE">SAO LUIS</span>
+    <span class="filter-chip" data-v="SAO LUIS - VALE">SAO LUIS VALE</span>
+    <span class="filter-chip" data-v="PARAGOMINAS - ETE">PARAG. ETE</span>
+    <span class="filter-chip" data-v="PARAGOMINAS - CIP">PARAG. CIP</span>
     <span class="filter-chip" data-v="SANTAREM">SANTAREM</span>
     <span class="filter-chip" data-v="MARABA">MARABA</span>
   </div>
   <div class="list-card"><div id="history-list"></div></div>
 </div>
 
+<!-- CONFIG -->
 <div class="screen" id="screen-settings">
   <div class="topbar"><p class="topbar-label">App</p><p class="topbar-title">Configuracoes</p></div>
   <div class="list-card" style="margin:0 16px 12px;">
     <div class="settings-item">
-      <div><p class="si-label">Gastos Corporativos</p><p class="si-sub">Versao 1.0</p></div>
+      <div><p class="si-label">Gastos Corporativos SOS360</p><p class="si-sub">Versao 2.0 - Firebase Sync</p></div>
       <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M12 8v4l3 3"/></svg>
     </div>
     <div class="settings-item" style="cursor:pointer;" onclick="exportCSV()">
       <div><p class="si-label">Exportar dados (CSV)</p><p class="si-sub">Baixar todos os lancamentos</p></div>
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </div>
-    <div class="settings-item" style="cursor:pointer;" onclick="clearAll()">
-      <div><p class="si-label" style="color:var(--danger);">Apagar todos os dados</p><p class="si-sub">Remove todos os lancamentos</p></div>
-      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-    </div>
   </div>
-  <div style="padding:20px;font-size:12px;color:var(--text3);line-height:1.6;"><p>Os dados sao armazenados localmente neste dispositivo.</p></div>
+  <div style="padding:20px;font-size:12px;color:var(--text3);line-height:1.8;">
+    <p>&#128274; Dados sincronizados via Firebase Firestore</p>
+    <p style="margin-top:6px;">&#127760; Todos os dispositivos compartilham os mesmos lancamentos em tempo real.</p>
+  </div>
 </div>
 
+<!-- NAV -->
 <nav class="nav">
   <button class="nav-btn active" onclick="goTo('home',this)">
     <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -269,204 +275,258 @@
   </button>
 </nav>
 
+<!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
-  <div class="modal" id="modal-content">
-    <div class="modal-handle"></div>
-    <div id="modal-body"></div>
-  </div>
+  <div class="modal"><div class="modal-handle"></div><div id="modal-body"></div></div>
 </div>
 <div class="toast" id="toast"></div>
 
-<script>
-var SK = 'gastos_corp_v1';
+<!-- FIREBASE SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCCP8RfvV2jDCOQbu2OvuZfMOMD9l-LePs",
+  authDomain: "sos360-gastos-fe286.firebaseapp.com",
+  projectId: "sos360-gastos-fe286",
+  storageBucket: "sos360-gastos-fe286.firebasestorage.app",
+  messagingSenderId: "777103398612",
+  appId: "1:777103398612:web:863f77a412c50860b64d41"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const colRef = collection(db, "expenses");
+
 var expenses = [];
 var receiptDataUrl = null;
-var currentFilter = 'todos';
+var currentFilter = "todos";
 var viewMonth = new Date();
-var MP = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-var MS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+var MP = ["Janeiro","Fevereiro","Marco","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+var MS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-function loadData(){ try{ expenses = JSON.parse(localStorage.getItem(SK))||[]; }catch(e){ expenses=[]; } }
-function saveData(){ localStorage.setItem(SK, JSON.stringify(expenses)); }
-
-function goTo(s,btn){
-  document.querySelectorAll('.screen').forEach(function(x){ x.classList.remove('active'); });
-  document.querySelectorAll('.nav-btn').forEach(function(x){ x.classList.remove('active'); });
-  document.getElementById('screen-'+s).classList.add('active');
-  if(btn) btn.classList.add('active');
-  if(s==='home') renderHome();
-  if(s==='history') renderHistory();
-  if(s==='novo') initForm();
-  window.scrollTo(0,0);
+function setSyncDot(state) {
+  var d = document.getElementById("sync-dot");
+  if (!d) return;
+  d.className = "sync-dot " + state;
 }
 
-function changeMonth(d){ viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+d, 1); renderHome(); }
+// Real-time listener - syncs all devices instantly
+var q = query(colRef, orderBy("createdAt", "desc"));
+onSnapshot(q, function(snapshot) {
+  expenses = [];
+  snapshot.forEach(function(docSnap) {
+    var e = docSnap.data();
+    e.id = docSnap.id;
+    expenses.push(e);
+  });
+  setSyncDot("synced");
+  renderHome();
+  renderHistory();
+}, function(err) {
+  console.error("Firestore error:", err);
+  setSyncDot("");
+});
 
-function fBRL(v){ return 'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function fDate(s){ var p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function goTo(s, btn) {
+  document.querySelectorAll(".screen").forEach(function(x){ x.classList.remove("active"); });
+  document.querySelectorAll(".nav-btn").forEach(function(x){ x.classList.remove("active"); });
+  document.getElementById("screen-" + s).classList.add("active");
+  if (btn) btn.classList.add("active");
+  if (s === "home") renderHome();
+  if (s === "history") renderHistory();
+  if (s === "novo") initForm();
+  window.scrollTo(0, 0);
+}
+window.goTo = goTo;
 
-function renderHome(){
-  var y=viewMonth.getFullYear(), m=viewMonth.getMonth();
-  document.getElementById('month-label').textContent = MP[m]+' '+y;
-  document.getElementById('home-month-pill').textContent = MS[m]+' '+y;
-  var f=expenses.filter(function(e){ var d=new Date(e.date); return d.getFullYear()===y&&d.getMonth()===m; });
-  var tot=f.reduce(function(s,e){ return s+parseFloat(e.amount); },0);
-  document.getElementById('total-month').textContent = tot===0?'R$ 0':fBRL(tot);
-  document.getElementById('total-count').textContent = f.length;
-  var top=f.slice().sort(function(a,b){ return b.amount-a.amount; })[0];
-  document.getElementById('top-expense').textContent = top?fBRL(top.amount):'--';
-  var ac={};
-  f.forEach(function(e){ ac[e.area]=(ac[e.area]||0)+parseFloat(e.amount); });
-  var ta=Object.entries(ac).sort(function(a,b){ return b[1]-a[1]; })[0];
-  document.getElementById('top-area').textContent = ta?ta[0]:'--';
-  var el=document.getElementById('home-list');
-  var s=f.slice().sort(function(a,b){ return new Date(b.date+' '+(b.time||'00:00'))-new Date(a.date+' '+(a.time||'00:00')); });
-  if(!s.length){ el.innerHTML='<div class="empty-state"><div class="icon">&#128193;</div><p>Nenhum lancamento em '+MP[m]+'</p></div>'; return; }
-  el.innerHTML=s.slice(0,5).map(eRow).join('');
+function changeMonth(d) { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+d, 1); renderHome(); }
+window.changeMonth = changeMonth;
+
+function fBRL(v) { return "R$ " + parseFloat(v).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fDate(s) { var p = s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
+
+function renderHome() {
+  var y = viewMonth.getFullYear(), m = viewMonth.getMonth();
+  document.getElementById("month-label").textContent = MP[m] + " " + y;
+  document.getElementById("home-month-pill").textContent = MS[m] + " " + y;
+  var f = expenses.filter(function(e) { var d = new Date(e.date); return d.getFullYear()===y && d.getMonth()===m; });
+  var tot = f.reduce(function(s,e){ return s + parseFloat(e.amount); }, 0);
+  document.getElementById("total-month").textContent = tot===0 ? "R$ 0" : fBRL(tot);
+  document.getElementById("total-count").textContent = f.length;
+  var top = f.slice().sort(function(a,b){ return b.amount - a.amount; })[0];
+  document.getElementById("top-expense").textContent = top ? fBRL(top.amount) : "--";
+  var ac = {};
+  f.forEach(function(e){ ac[e.area] = (ac[e.area]||0) + parseFloat(e.amount); });
+  var ta = Object.entries(ac).sort(function(a,b){ return b[1]-a[1]; })[0];
+  document.getElementById("top-area").textContent = ta ? ta[0] : "--";
+  var el = document.getElementById("home-list");
+  var sorted = f.slice().sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
+  if (!sorted.length) { el.innerHTML = "<div class="empty-state"><div class="icon">&#128193;</div><p>Nenhum lancamento em " + MP[m] + "</p></div>"; return; }
+  el.innerHTML = sorted.slice(0,5).map(eRow).join("");
 }
 
-function renderHistory(){
-  var el=document.getElementById('history-list');
-  var d=expenses.slice();
-  if(currentFilter!=='todos') d=d.filter(function(e){ return e.area===currentFilter; });
-  d.sort(function(a,b){ return new Date(b.date+' '+(b.time||'00:00'))-new Date(a.date+' '+(a.time||'00:00')); });
-  if(!d.length){ el.innerHTML='<div class="empty-state"><div class="icon">&#128269;</div><p>Nenhum resultado</p></div>'; return; }
-  el.innerHTML=d.map(eRow).join('');
+function renderHistory() {
+  var el = document.getElementById("history-list");
+  var data = expenses.slice();
+  if (currentFilter !== "todos") data = data.filter(function(e){ return e.area === currentFilter; });
+  if (!data.length) { el.innerHTML = "<div class="empty-state"><div class="icon">&#128269;</div><p>Nenhum resultado</p></div>"; return; }
+  el.innerHTML = data.map(eRow).join("");
 }
 
-function eRow(e){
-  return '<div class="expense-item" data-id="'+e.id+'" onclick="openDetail(this.dataset.id)">'+
-    '<div class="expense-icon">&#128179;</div>'+
-    '<div class="expense-info"><p class="expense-merchant">'+e.merchant+'</p>'+
-    '<p class="expense-meta">'+fDate(e.date)+' - '+e.area+'</p></div>'+
-    '<span class="expense-amount">'+fBRL(e.amount)+'</span></div>';
+function eRow(e) {
+  return "<div class="expense-item" data-id="" + e.id + "" onclick="openDetail(this.dataset.id)">" +
+    "<div class="expense-icon">&#128179;</div>" +
+    "<div class="expense-info"><p class="expense-merchant">" + e.merchant + "</p>" +
+    "<p class="expense-meta">" + fDate(e.date) + " - " + e.area + "</p></div>" +
+    "<span class="expense-amount">" + fBRL(e.amount) + "</span></div>";
 }
 
-document.querySelectorAll('#filter-row .filter-chip').forEach(function(c){
-  c.onclick=function(){
-    document.querySelectorAll('#filter-row .filter-chip').forEach(function(x){ x.classList.remove('active'); });
-    c.classList.add('active'); currentFilter=c.dataset.v; renderHistory();
+document.querySelectorAll("#filter-row .filter-chip").forEach(function(c) {
+  c.onclick = function() {
+    document.querySelectorAll("#filter-row .filter-chip").forEach(function(x){ x.classList.remove("active"); });
+    c.classList.add("active");
+    currentFilter = c.dataset.v;
+    renderHistory();
   };
 });
 
-function initForm(){
-  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
-  document.getElementById('f-time').value=new Date().toTimeString().slice(0,5);
-  ['f-merchant','f-amount','f-desc'].forEach(function(id){ document.getElementById(id).value=''; });
-  receiptDataUrl=null;
-  document.getElementById('f-preview-wrap').style.display='none';
-  document.getElementById('f-zone').classList.remove('has-file');
-  document.getElementById('f-zone-icon').textContent='&#128248;';
-  document.getElementById('f-file').value='';
-  document.querySelectorAll('#f-installments .chip').forEach(function(c){ c.classList.toggle('active',c.dataset.v==='1'); });
-  var areaSelect = document.getElementById('f-area'); if(areaSelect) areaSelect.value = '';
-  document.querySelectorAll('#f-category .chip').forEach(function(c){ c.classList.remove('active'); });
+function initForm() {
+  document.getElementById("f-date").value = new Date().toISOString().split("T")[0];
+  document.getElementById("f-time").value = new Date().toTimeString().slice(0,5);
+  ["f-merchant","f-amount","f-desc"].forEach(function(id){ document.getElementById(id).value = ""; });
+  var areaSelect = document.getElementById("f-area"); if (areaSelect) areaSelect.value = "";
+  receiptDataUrl = null;
+  document.getElementById("f-preview-wrap").style.display = "none";
+  document.getElementById("f-zone").classList.remove("has-file");
+  document.getElementById("f-zone-icon").textContent = "&#128248;";
+  document.getElementById("f-file").value = "";
+  document.querySelectorAll("#f-installments .chip").forEach(function(c){ c.classList.toggle("active", c.dataset.v==="1"); });
+  document.querySelectorAll("#f-category .chip").forEach(function(c){ c.classList.remove("active"); });
 }
 
-document.querySelectorAll('#f-installments .chip').forEach(function(c){
-  c.onclick=function(){ document.querySelectorAll('#f-installments .chip').forEach(function(x){ x.classList.remove('active'); }); c.classList.add('active'); };
+document.querySelectorAll("#f-installments .chip").forEach(function(c) {
+  c.onclick = function(){ document.querySelectorAll("#f-installments .chip").forEach(function(x){ x.classList.remove("active"); }); c.classList.add("active"); };
 });
-// area is now a select dropdown - no click handlers needed
-document.querySelectorAll('#f-category .chip').forEach(function(c){
-  c.onclick=function(){ document.querySelectorAll('#f-category .chip').forEach(function(x){ x.classList.remove('active'); }); c.classList.add('active'); };
+document.querySelectorAll("#f-category .chip").forEach(function(c) {
+  c.onclick = function(){ document.querySelectorAll("#f-category .chip").forEach(function(x){ x.classList.remove("active"); }); c.classList.add("active"); };
 });
 
-function handleReceiptFile(input){
-  var f=input.files[0]; if(!f) return;
-  var r=new FileReader();
-  r.onload=function(ev){
-    receiptDataUrl=ev.target.result;
-    document.getElementById('f-preview').src=receiptDataUrl;
-    document.getElementById('f-preview-wrap').style.display='block';
-    document.getElementById('f-zone').classList.add('has-file');
-    document.getElementById('f-zone-icon').textContent='&#10003;';
+function handleReceiptFile(input) {
+  var f = input.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function(ev) {
+    receiptDataUrl = ev.target.result;
+    document.getElementById("f-preview").src = receiptDataUrl;
+    document.getElementById("f-preview-wrap").style.display = "block";
+    document.getElementById("f-zone").classList.add("has-file");
+    document.getElementById("f-zone-icon").textContent = "&#10003;";
   };
   r.readAsDataURL(f);
 }
-function removeReceipt(){
-  receiptDataUrl=null;
-  document.getElementById('f-preview-wrap').style.display='none';
-  document.getElementById('f-zone').classList.remove('has-file');
-  document.getElementById('f-zone-icon').textContent='&#128248;';
-  document.getElementById('f-file').value='';
-}
+window.handleReceiptFile = handleReceiptFile;
 
-function saveExpense(){
-  var m=document.getElementById('f-merchant').value.trim();
-  var v=document.getElementById('f-amount').value;
-  var a=document.getElementById('f-area');
-  var aVal = a ? a.value : '';
-  var c=document.querySelector('#f-category .chip.active');
-  if(!m){ toast('Informe o estabelecimento'); return; }
-  if(!v||parseFloat(v)<=0){ toast('Informe o valor'); return; }
-  if(!aVal){ toast('Selecione o centro de custo'); return; }
-  if(!c){ toast('Selecione a categoria'); return; }
-  var inst=document.querySelector('#f-installments .chip.active');
-  expenses.unshift({
-    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-    date: document.getElementById('f-date').value,
-    time: document.getElementById('f-time').value,
-    merchant: m, amount: parseFloat(v),
-    installments: inst?inst.dataset.v:'1',
-    area: aVal, category: c.dataset.v,
-    desc: document.getElementById('f-desc').value.trim(),
-    receipt: receiptDataUrl||null,
+function removeReceipt() {
+  receiptDataUrl = null;
+  document.getElementById("f-preview-wrap").style.display = "none";
+  document.getElementById("f-zone").classList.remove("has-file");
+  document.getElementById("f-zone-icon").textContent = "&#128248;";
+  document.getElementById("f-file").value = "";
+}
+window.removeReceipt = removeReceipt;
+
+function saveExpense() {
+  var merchant = document.getElementById("f-merchant").value.trim();
+  var amount = document.getElementById("f-amount").value;
+  var areaEl = document.getElementById("f-area");
+  var areaVal = areaEl ? areaEl.value : "";
+  var category = document.querySelector("#f-category .chip.active");
+  if (!merchant) { showToast("Informe o estabelecimento"); return; }
+  if (!amount || parseFloat(amount) <= 0) { showToast("Informe o valor"); return; }
+  if (!areaVal) { showToast("Selecione o centro de custo"); return; }
+  if (!category) { showToast("Selecione a categoria"); return; }
+  var inst = document.querySelector("#f-installments .chip.active");
+  var expense = {
+    date: document.getElementById("f-date").value,
+    time: document.getElementById("f-time").value,
+    merchant: merchant,
+    amount: parseFloat(amount),
+    installments: inst ? inst.dataset.v : "1",
+    area: areaVal,
+    category: category.dataset.v,
+    desc: document.getElementById("f-desc").value.trim(),
+    receipt: receiptDataUrl || null,
     createdAt: new Date().toISOString()
+  };
+  setSyncDot("syncing");
+  addDoc(colRef, expense).then(function() {
+    showToast("Lancamento salvo!");
+    setTimeout(function() {
+      initForm();
+      goTo("home", null);
+      document.querySelectorAll(".nav-btn").forEach(function(b){ b.classList.remove("active"); });
+      document.querySelectorAll(".nav-btn")[0].classList.add("active");
+    }, 800);
+  }).catch(function(err) {
+    showToast("Erro ao salvar: " + err.message);
+    setSyncDot("");
   });
-  saveData(); toast('Lancamento salvo!');
-  setTimeout(function(){
-    initForm(); goTo('home',null);
-    document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
-    document.querySelectorAll('.nav-btn')[0].classList.add('active');
-  },900);
 }
+window.saveExpense = saveExpense;
 
-function openDetail(id){
-  var e=expenses.find(function(x){ return x.id===id; });
-  if(!e) return;
-  var inst=e.installments==='1'?'A vista':e.installments+'x';
-  document.getElementById('modal-body').innerHTML=
-    '<p class="modal-title">'+e.merchant+'</p>'+
-    '<p class="modal-sub">'+fDate(e.date)+(e.time?' as '+e.time:'')+' - '+e.category+'</p>'+
-    '<p class="detail-amount">'+fBRL(e.amount)+'</p>'+
-    '<div class="detail-row"><span class="key">Area</span><span class="val">'+e.area+'</span></div>'+
-    '<div class="detail-row"><span class="key">Categoria</span><span class="val">'+e.category+'</span></div>'+
-    '<div class="detail-row"><span class="key">Parcelas</span><span class="val">'+inst+'</span></div>'+
-    (e.desc?'<div class="detail-row"><span class="key">Descricao</span><span class="val">'+e.desc+'</span></div>':'')+
-    (e.receipt?'<img class="modal-img" src="'+e.receipt+'" alt="Comprovante" />':'')+
-    '<button class="btn-danger" data-id="'+e.id+'" onclick="deleteExpense(this.dataset.id)">Excluir lancamento</button>';
-  document.getElementById('modal-overlay').classList.add('open');
+function openDetail(id) {
+  var e = expenses.find(function(x){ return x.id === id; });
+  if (!e) return;
+  var inst = e.installments === "1" ? "A vista" : e.installments + "x";
+  document.getElementById("modal-body").innerHTML =
+    "<p class="modal-title">" + e.merchant + "</p>" +
+    "<p class="modal-sub">" + fDate(e.date) + (e.time ? " as " + e.time : "") + " - " + e.category + "</p>" +
+    "<p class="detail-amount">" + fBRL(e.amount) + "</p>" +
+    "<div class="detail-row"><span class="key">Centro de custo</span><span class="val">" + e.area + "</span></div>" +
+    "<div class="detail-row"><span class="key">Categoria</span><span class="val">" + e.category + "</span></div>" +
+    "<div class="detail-row"><span class="key">Parcelas</span><span class="val">" + inst + "</span></div>" +
+    (e.desc ? "<div class="detail-row"><span class="key">Descricao</span><span class="val">" + e.desc + "</span></div>" : "") +
+    (e.receipt ? "<img class="modal-img" src="" + e.receipt + "" alt="Comprovante" />" : "") +
+    "<button class="btn-danger" data-id="" + e.id + "" onclick="deleteExpense(this.dataset.id)">Excluir lancamento</button>";
+  document.getElementById("modal-overlay").classList.add("open");
 }
-function closeModal(ev){ if(ev.target===document.getElementById('modal-overlay')) document.getElementById('modal-overlay').classList.remove('open'); }
-function deleteExpense(id){
-  if(!confirm('Excluir este lancamento?')) return;
-  expenses=expenses.filter(function(e){ return e.id!==id; });
-  saveData(); document.getElementById('modal-overlay').classList.remove('open');
-  toast('Lancamento removido'); renderHome(); renderHistory();
-}
+window.openDetail = openDetail;
 
-function exportCSV(){
-  var h='Data,Horario,Estabelecimento,Valor,Parcelas,Area,Categoria,Descricao';
-  var r=expenses.map(function(e){
-    return [e.date,e.time||'','"'+e.merchant+'"',e.amount,e.installments,e.area,e.category,'"'+(e.desc||'').replace(/"/g,'""')+'"'].join(',');
+function closeModal(ev) { if (ev.target === document.getElementById("modal-overlay")) document.getElementById("modal-overlay").classList.remove("open"); }
+window.closeModal = closeModal;
+
+function deleteExpense(id) {
+  if (!confirm("Excluir este lancamento?")) return;
+  setSyncDot("syncing");
+  deleteDoc(doc(db, "expenses", id)).then(function() {
+    document.getElementById("modal-overlay").classList.remove("open");
+    showToast("Lancamento removido");
+  }).catch(function(err) {
+    showToast("Erro: " + err.message);
+    setSyncDot("");
   });
-  var b=new Blob([h+'\n'+r.join('\n')],{type:'text/csv;charset=utf-8;'});
-  var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='gastos-corporativos.csv'; a.click();
-  toast('CSV exportado');
+}
+window.deleteExpense = deleteExpense;
+
+function exportCSV() {
+  var h = "Data,Horario,Estabelecimento,Valor,Parcelas,Centro de Custo,Categoria,Descricao";
+  var rows = expenses.map(function(e) {
+    return [e.date, e.time||"", '"'+e.merchant+'"', e.amount, e.installments, e.area, e.category, '"'+(e.desc||"").replace(/"/g,""+'"')+'"'].join(",");
+  });
+  var b = new Blob([h + "
+" + rows.join("
+")], {type:"text/csv;charset=utf-8;"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "gastos-sos360.csv"; a.click();
+  showToast("CSV exportado");
+}
+window.exportCSV = exportCSV;
+
+function showToast(msg) {
+  var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(function(){ t.classList.remove("show"); }, 2800);
 }
 
-function clearAll(){
-  if(!confirm('Apagar TODOS os lancamentos?')) return;
-  expenses=[]; saveData(); toast('Dados apagados'); renderHome();
-}
-
-function toast(msg){
-  var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); },2800);
-}
-
-loadData();
-renderHome();
 </script>
 </body>
 </html>
