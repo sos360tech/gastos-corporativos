@@ -183,6 +183,21 @@
       </div>
     </div>
     <div class="fsec">
+      <p class="fsec-title">Responsavel *</p>
+      <div class="field">
+        <select id="f-user">
+          <option value="">Selecione o responsavel...</option>
+          <option>FELIPE</option>
+          <option>MARCOS</option>
+          <option>LEANDRO</option>
+          <option>NATHALIA</option>
+          <option>PAULO JUNIOR</option>
+          <option>RODRIGO</option>
+          <option>VANESSA</option>
+        </select>
+      </div>
+    </div>
+    <div class="fsec">
       <p class="fsec-title">Categoria *</p>
       <div class="chips" id="f-cat">
         <span class="chip" data-v="Viagem">&#9992; Viagem</span>
@@ -370,7 +385,7 @@ function eRow(e) {
   return '<div class="exp-item" data-id="' + e.id + '" onclick="openDetail(this.dataset.id)">'
     + '<div class="exp-icon">&#128179;</div>'
     + '<div class="exp-info"><p class="exp-merchant">' + e.merchant + '</p>'
-    + '<p class="exp-meta">' + fDate(e.date) + ' &middot; ' + e.area + '</p></div>'
+    + '<p class="exp-meta">' + fDate(e.date) + ' &middot; ' + e.area + (e.user ? ' &middot; ' + e.user : '') + '</p></div>'
     + '<span class="exp-amount">' + fBRL(e.amount) + '</span></div>';
 }
 
@@ -390,6 +405,7 @@ function initForm() {
   document.getElementById("f-time").value = new Date().toTimeString().slice(0,5);
   ["f-merchant","f-amount","f-desc"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("f-area").value = "";
+  document.getElementById("f-user").value = "";
   receipt = null;
   document.getElementById("f-prev-wrap").style.display = "none";
   document.getElementById("f-zone").classList.remove("has-file");
@@ -436,6 +452,8 @@ window.saveExp = () => {
   if (!merchant) { toast("Informe o estabelecimento"); return; }
   if (!amount || parseFloat(amount) <= 0) { toast("Informe o valor"); return; }
   if (!area) { toast("Selecione o centro de custo"); return; }
+  const user = document.getElementById("f-user").value;
+  if (!user) { toast("Selecione o responsavel"); return; }
   if (!cat) { toast("Selecione a categoria"); return; }
   dot("busy");
   addDoc(col, {
@@ -443,7 +461,7 @@ window.saveExp = () => {
     time: document.getElementById("f-time").value,
     merchant, amount: parseFloat(amount),
     installments: inst ? inst.dataset.v : "1",
-    area, category: cat.dataset.v,
+    area, user, category: cat.dataset.v,
     desc: document.getElementById("f-desc").value.trim(),
     receipt: receipt || null,
     createdAt: new Date().toISOString()
@@ -464,6 +482,7 @@ window.openDetail = id => {
     + '<p class="modal-sub">' + fDate(e.date) + (e.time ? " as " + e.time : "") + " &middot; " + e.category + '</p>'
     + '<p class="det-amt">' + fBRL(e.amount) + '</p>'
     + '<div class="det-row"><span class="k">Centro de custo</span><span class="v">' + e.area + '</span></div>'
+    + '<div class="det-row"><span class="k">Responsavel</span><span class="v">' + (e.user||'--') + '</span></div>'
     + '<div class="det-row"><span class="k">Categoria</span><span class="v">' + e.category + '</span></div>'
     + '<div class="det-row"><span class="k">Parcelas</span><span class="v">' + inst + '</span></div>';
   if (e.desc) html += '<div class="det-row"><span class="k">Descricao</span><span class="v">' + e.desc + '</span></div>';
@@ -485,9 +504,9 @@ window.delExp = id => {
 };
 
 window.doExport = () => {
-  const header = "Data,Horario,Estabelecimento,Valor,Parcelas,Centro de Custo,Categoria,Descricao";
+  const header = "Data,Horario,Responsavel,Estabelecimento,Valor,Parcelas,Centro de Custo,Categoria,Descricao";
   const rows = expenses.map(e => [
-    e.date, e.time||"", '"'+e.merchant+'"', e.amount,
+    e.date, e.time||"", e.user||"", '"'+e.merchant+'"', e.amount,
     e.installments, e.area, e.category,
     '"'+(e.desc||"").replace(/"/g,'""')+'"'
   ].join(","));
