@@ -487,18 +487,23 @@ window.saveExp = async () => {
     if (receipt) {
       toast("Enviando foto...");
       const base64data = receipt.split(",")[1];
-      const fd = new FormData();
-      fd.append("key", "854165a6ff8b8d4ef385e3650754105f");
-      fd.append("image", base64data);
-      fd.append("expiration", "15552000"); // 6 months
-      const imgResp = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: fd });
+      const params = new URLSearchParams();
+      params.append("key", "854165a6ff8b8d4ef385e3650754105f");
+      params.append("image", base64data);
+      params.append("expiration", "15552000");
+      const imgResp = await fetch("https://api.imgbb.com/1/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString()
+      });
       const imgData = await imgResp.json();
       if (imgData.success) {
         receiptURL = imgData.data.url;
         receiptThumb = imgData.data.thumb ? imgData.data.thumb.url : imgData.data.url;
       } else {
-        toast("Erro na foto, salvando sem comprovante...");
-        await new Promise(r => setTimeout(r, 1500));
+        console.error("ImgBB error:", imgData);
+        toast("Erro na foto (" + (imgData.error?.message||"?") + "), salvando sem comprovante...");
+        await new Promise(r => setTimeout(r, 2000));
       }
     }
     await addDoc(col, {
