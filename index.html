@@ -366,14 +366,14 @@ window.chMonth = d => { vMonth = new Date(vMonth.getFullYear(), vMonth.getMonth(
 
 // Format helpers
 const fBRL = v => "R$ " + parseFloat(v).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
-const fDate = s => { const p = s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; };
+const fDate = s => { if (!s) return ""; const p = s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; };
 
 // Render home
 function renderHome() {
   const y = vMonth.getFullYear(), m = vMonth.getMonth();
   document.getElementById("lbl-month").textContent = MP[m] + " " + y;
   document.getElementById("pill-month").textContent = MS[m] + " " + y;
-  const f = expenses.filter(e => { const d = new Date(e.date); return d.getFullYear()===y && d.getMonth()===m; });
+  const f = expenses.filter(e => { const d = new Date(e.date + "T00:00"); return d.getFullYear()===y && d.getMonth()===m; });
   const tot = f.reduce((s,e) => s + parseFloat(e.amount), 0);
   document.getElementById("s-total").textContent = tot ? fBRL(tot) : "R$ 0";
   document.getElementById("s-count").textContent = f.length;
