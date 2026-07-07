@@ -399,27 +399,29 @@ const provider = new GoogleAuthProvider();
 // v4.1 - Firebase Hosting deploy
 const CORP_PIN = "3843";
 
-// Check redirect result on page load (Google login returns here after redirect)
+// Check redirect result on page load
+console.log("[AUTH] Page loaded, checking redirect result...");
+console.log("[AUTH] loginMode:", localStorage.getItem("loginMode"));
+
 getRedirectResult(auth).then(result => {
+  console.log("[AUTH] getRedirectResult resolved:", result ? result.user?.email : "null");
   if (result && result.user) {
     isCorpMode = false;
     currentUser = result.user;
     localStorage.removeItem("loginMode");
-    // Hide login, show app
     document.getElementById("sc-login").style.display = "none";
     document.getElementById("sc-pin").style.display = "none";
     document.getElementById("main-nav").style.display = "flex";
     enterApp(result.user.displayName || result.user.email || "Usuario");
   }
 }).catch(e => {
-  console.error("Redirect error:", e);
-  if (e.code !== "auth/no-current-user") {
-    toast("Erro no login: " + (e.message||"").slice(0,60));
-  }
+  console.error("[AUTH] getRedirectResult error:", e.code, e.message);
+  toast("Erro no login: " + (e.message||"").slice(0,60));
 });
 
 // onAuthStateChanged handles persistent sessions
 onAuthStateChanged(auth, user => {
+  console.log("[AUTH] onAuthStateChanged:", user ? user.email : "null", "| loginMode:", localStorage.getItem("loginMode"));
   if (user && !currentUser) {
     currentUser = user;
     const mode = localStorage.getItem("loginMode");
