@@ -291,7 +291,7 @@
       <p class="fsec-title">Comprovante</p>
       <div class="rz" id="f-zone">
         <input type="file" id="f-file" accept="image/*" capture="environment" onchange="onFile(this)">
-        <div class="rz-ico" id="f-ico">&#128248;</div>
+        <div class="rz-ico" id="f-ico">📸</div>
         <p>Tirar foto ou anexar comprovante</p>
         <small>JPG ou PNG - comprimido automaticamente</small>
       </div>
@@ -662,7 +662,7 @@ function initForm() {
   receipt=null;
   document.getElementById("f-prev-wrap").style.display="none";
   document.getElementById("f-zone").classList.remove("has-file");
-  document.getElementById("f-ico").textContent="&#128248;";
+  document.getElementById("f-ico").textContent="📸";
   document.getElementById("f-file").value="";
   document.getElementById("f-size").textContent="";
   document.querySelectorAll("#f-inst .chip").forEach(c => c.classList.toggle("active",c.dataset.v==="1"));
@@ -693,7 +693,7 @@ window.onFile = input => {
       document.getElementById("f-prev").src=receipt;
       document.getElementById("f-prev-wrap").style.display="block";
       document.getElementById("f-zone").classList.add("has-file");
-      document.getElementById("f-ico").textContent="&#10003;";
+      document.getElementById("f-ico").textContent="✅";
       document.getElementById("f-size").textContent=kb+" KB";
     };
     img.src=ev.target.result;
@@ -705,7 +705,7 @@ window.rmFile = () => {
   receipt=null;
   document.getElementById("f-prev-wrap").style.display="none";
   document.getElementById("f-zone").classList.remove("has-file");
-  document.getElementById("f-ico").textContent="&#128248;";
+  document.getElementById("f-ico").textContent="📸";
   document.getElementById("f-file").value="";
   document.getElementById("f-size").textContent="";
 };
