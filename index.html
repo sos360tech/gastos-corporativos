@@ -381,7 +381,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyDdFODD9c1PHLKoVV0MqLmqSq2-A43xIDw",
@@ -450,15 +450,27 @@ const MS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","D
 // ---- AUTH ----
 
 
-window.loginGoogle = () => {
+window.loginGoogle = async () => {
   isCorpMode = false;
-  localStorage.setItem("loginMode", "redirecting");
-  document.getElementById("btn-google").textContent = "Redirecionando...";
-  signInWithRedirect(auth, provider).catch(e => {
-    toast("Erro no login: " + e.message);
-    document.getElementById("btn-google").textContent = "Entrar com minha conta Google";
+  document.getElementById("btn-google").textContent = "Entrando...";
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    const result = await signInWithPopup(auth, provider);
+    currentUser = result.user;
     localStorage.removeItem("loginMode");
-  });
+    enterApp(result.user.displayName || result.user.email || "Usuario");
+  } catch(e) {
+    console.error("[AUTH] Popup error:", e.code, e.message);
+    if (e.code === "auth/popup-blocked" || e.code === "auth/popup-closed-by-user") {
+      // Fallback to redirect
+      localStorage.setItem("loginMode", "redirecting");
+      document.getElementById("btn-google").textContent = "Redirecionando...";
+      await signInWithRedirect(auth, provider);
+    } else {
+      toast("Erro no login: " + (e.message||"").slice(0,60));
+      document.getElementById("btn-google").textContent = "Entrar com minha conta Google";
+    }
+  }
 };
 
 // PIN logic
