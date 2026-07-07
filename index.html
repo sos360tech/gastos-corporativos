@@ -405,11 +405,32 @@ getRedirectResult(auth).then(result => {
     isCorpMode = false;
     currentUser = result.user;
     localStorage.removeItem("loginMode");
+    // Hide login, show app
+    document.getElementById("sc-login").style.display = "none";
+    document.getElementById("sc-pin").style.display = "none";
+    document.getElementById("main-nav").style.display = "flex";
     enterApp(result.user.displayName || result.user.email || "Usuario");
   }
 }).catch(e => {
-  console.error("Redirect error:", e.message);
-  toast("Erro no login Google: " + e.message.slice(0,60));
+  console.error("Redirect error:", e);
+  if (e.code !== "auth/no-current-user") {
+    toast("Erro no login: " + (e.message||"").slice(0,60));
+  }
+});
+
+// onAuthStateChanged handles persistent sessions
+onAuthStateChanged(auth, user => {
+  if (user && !currentUser) {
+    currentUser = user;
+    const mode = localStorage.getItem("loginMode");
+    if (mode === "corp") {
+      isCorpMode = true;
+      enterApp("Corporativo");
+    } else if (mode !== "redirecting") {
+      isCorpMode = false;
+      enterApp(user.displayName || user.email || "Usuario");
+    }
+  }
 });
 const CORP_UID = "corporativo";
 
@@ -425,20 +446,16 @@ const MP = ["Janeiro","Fevereiro","Marco","Abril","Maio","Junho","Julho","Agosto
 const MS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
 // ---- AUTH ----
-onAuthStateChanged(auth, user => {
-  if (user) {
-    currentUser = user;
-    enterApp(isCorpMode ? "corporativo" : user.displayName || user.email || "Usuario");
-  }
-});
+
 
 window.loginGoogle = () => {
   isCorpMode = false;
-  localStorage.setItem("loginMode", "google");
+  localStorage.setItem("loginMode", "redirecting");
   document.getElementById("btn-google").textContent = "Redirecionando...";
   signInWithRedirect(auth, provider).catch(e => {
     toast("Erro no login: " + e.message);
     document.getElementById("btn-google").textContent = "Entrar com minha conta Google";
+    localStorage.removeItem("loginMode");
   });
 };
 
@@ -475,10 +492,11 @@ function updatePinDots() {
 async function checkPin() {
   if (pinValue === CORP_PIN) {
     isCorpMode = true;
+    localStorage.setItem("loginMode", "corp");
     try {
       await signInAnonymously(auth);
+      enterApp("Corporativo");
     } catch(e) {
-      // already signed in anonymously or error
       enterApp("Corporativo");
     }
   } else {
