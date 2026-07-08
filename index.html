@@ -504,77 +504,44 @@ window.confirmPin = () => {
 async function checkPin() {
   const btn = document.getElementById("pin-confirm-btn");
   if (btn) { btn.style.opacity = ".4"; btn.style.pointerEvents = "none"; btn.textContent = "..."; }
-  // Search all users for matching PIN
-  const snap = await getDocs(collection(db, "admin_users"));
-  let found = null;
-  snap.forEach(d => {
-    const u = d.data();
-    // Compare as string and number to handle both formats
-    if ((String(u.pin) === String(pinValue)) && !u.blocked) found = {...u, id: d.id};
-  });
-  if (found) {
-    pinValue = "";
-    updatePinDots("pin-dots", 0);
-    if (btn) btn.textContent = "✓";
-    currentUserData = {...found, mode:"corp"};
-    if (found.mustChangePin) {
-      showChangePinScreen(true);
-    } else {
-      enterApp();
-    }
-  } else {
-    if (btn) { btn.textContent = "✓"; btn.style.opacity = ".4"; btn.style.pointerEvents = "none"; }
-    document.getElementById("pin-error").style.opacity = "1";
-    setTimeout(() => {
+  try {
+    console.log("[PIN] Checking PIN:", pinValue);
+    const snap = await getDocs(collection(db, "admin_users"));
+    console.log("[PIN] Total users in DB:", snap.size);
+    let found = null;
+    snap.forEach(d => {
+      const u = d.data();
+      console.log("[PIN] User:", u.name, "| pin:", u.pin, "| type:", typeof u.pin, "| blocked:", u.blocked);
+      if (String(u.pin) === String(pinValue) && !u.blocked) {
+        found = {...u, id: d.id};
+      }
+    });
+    console.log("[PIN] Result:", found ? "FOUND: " + found.name : "NOT FOUND");
+    if (found) {
       pinValue = "";
       updatePinDots("pin-dots", 0);
-      document.getElementById("pin-error").style.opacity = "0";
-    }, 1500);
+      if (btn) btn.textContent = "✓";
+      currentUserData = {...found, mode:"corp"};
+      if (found.mustChangePin) {
+        showChangePinScreen(true);
+      } else {
+        enterApp();
+      }
+    } else {
+      if (btn) { btn.textContent = "✓"; btn.style.opacity = ".4"; btn.style.pointerEvents = "none"; }
+      document.getElementById("pin-error").style.opacity = "1";
+      setTimeout(() => {
+        pinValue = "";
+        updatePinDots("pin-dots", 0);
+        document.getElementById("pin-error").style.opacity = "0";
+      }, 1500);
+    }
+  } catch(err) {
+    console.error("[PIN] Error:", err);
+    toast("Erro: " + err.message);
+    if (btn) { btn.textContent = "✓"; btn.style.opacity = "1"; btn.style.pointerEvents = "auto"; }
   }
 }
-
-function updatePinDots(dotsId, count) {
-  document.querySelectorAll("#"+dotsId+" .pin-dot").forEach((dot,i) => {
-    dot.classList.toggle("filled", i < count);
-  });
-}
-
-// ---- CHANGE PIN ----
-function showChangePinScreen(isFirst) {
-  document.getElementById("sc-pin").style.display = "none";
-  document.getElementById("sc-change-pin").style.display = "flex";
-  document.getElementById("change-pin-sub").textContent = isFirst
-    ? "Este e seu primeiro acesso. Crie um PIN pessoal de 4 digitos."
-    : "Digite o novo PIN de 4 digitos.";
-  changePinStep = 0;
-  newPinTemp = "";
-  newPinValue = "";
-  updatePinDots("new-pin-dots", 0);
-  document.getElementById("new-pin-error").style.opacity = "0";
-}
-
-window.showChangePinModal = () => showChangePinScreen(false);
-
-window.newPinPress = d => {
-  if (newPinValue.length >= 4) return;
-  newPinValue += d;
-  updatePinDots("new-pin-dots", newPinValue.length);
-  const btn = document.getElementById("new-pin-confirm-btn");
-  if (btn) {
-    if (newPinValue.length === 4) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
-    else { btn.style.opacity=".4"; btn.style.pointerEvents="none"; }
-  }
-};
-window.newPinDel = () => {
-  newPinValue = newPinValue.slice(0,-1);
-  updatePinDots("new-pin-dots", newPinValue.length);
-  const btn = document.getElementById("new-pin-confirm-btn");
-  if (btn) { btn.style.opacity=".4"; btn.style.pointerEvents="none"; }
-};
-window.confirmNewPin = () => {
-  if (newPinValue.length === 4) handleNewPin();
-};
-
 async function handleNewPin() {
   if (changePinStep === 0) {
     newPinTemp = newPinValue;
