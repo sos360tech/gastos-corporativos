@@ -519,7 +519,10 @@ async function checkPin() {
     snap.forEach(d => {
       const u = d.data();
       console.log("[PIN] User:", u.name, "| pin:", u.pin, "| type:", typeof u.pin, "| blocked:", u.blocked);
-      if (String(u.pin) === String(pinValue) && !u.blocked) {
+      const storedPin = String(u.pin).trim();
+      const enteredPin = String(pinValue).trim();
+      console.log("[PIN] Comparing stored:", JSON.stringify(storedPin), "entered:", JSON.stringify(enteredPin), "match:", storedPin === enteredPin);
+      if (storedPin === enteredPin && !u.blocked) {
         found = {...u, id: d.id};
       }
     });
