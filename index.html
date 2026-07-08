@@ -598,6 +598,30 @@ async function handleNewPin() {
     updatePinDots("new-pin-dots", 0);
   } else {
     if (newPinValue === newPinTemp) {
+      // Check if PIN already in use by another user
+      const snap = await getDocs(collection(db, "admin_users"));
+      let pinExists = false;
+      let pinOwner = "";
+      snap.forEach(d => {
+        if (d.id !== currentUserData.id && String(d.data().pin).trim() === String(newPinValue).trim()) {
+          pinExists = true;
+          pinOwner = d.data().name;
+        }
+      });
+      if (pinExists) {
+        document.getElementById("new-pin-error").textContent = "PIN ja em uso por " + pinOwner + ". Escolha outro.";
+        document.getElementById("new-pin-error").style.opacity = "1";
+        setTimeout(() => {
+          newPinValue = ""; newPinTemp = ""; changePinStep = 0;
+          window.updatePinDots("new-pin-dots", 0);
+          document.getElementById("change-pin-sub").textContent = "Digite o novo PIN de 4 digitos.";
+          document.getElementById("new-pin-error").style.opacity = "0";
+          document.getElementById("new-pin-error").textContent = "Os PINs nao coincidem. Tente novamente.";
+          const btn = document.getElementById("new-pin-confirm-btn");
+          if (btn) { btn.style.opacity=".4"; btn.style.pointerEvents="none"; }
+        }, 2000);
+        return;
+      }
       // Save new PIN
       await updateDoc(doc(db, "admin_users", currentUserData.id), {pin: newPinValue, mustChangePin: false});
       currentUserData.pin = newPinValue;
