@@ -695,7 +695,7 @@ function initForm() {
   receipt=null;
   document.getElementById("f-prev-wrap").style.display="none";
   document.getElementById("f-zone").classList.remove("has-file");
-  document.getElementById("f-ico").textContent="\uD83D\uDCF8";
+  document.getElementById("f-ico").textContent="📸";
   document.getElementById("f-file").value="";
   document.getElementById("f-size").textContent="";
   document.querySelectorAll("#f-inst .chip").forEach(c=>c.classList.toggle("active",c.dataset.v==="1"));
@@ -726,7 +726,7 @@ window.onFile = input => {
       document.getElementById("f-prev").src=receipt;
       document.getElementById("f-prev-wrap").style.display="block";
       document.getElementById("f-zone").classList.add("has-file");
-      document.getElementById("f-ico").textContent="\u2705";
+      document.getElementById("f-ico").textContent="✅";
       document.getElementById("f-size").textContent=kb+" KB";
     };
     img.src=ev.target.result;
@@ -738,7 +738,7 @@ window.rmFile=()=>{
   receipt=null;
   document.getElementById("f-prev-wrap").style.display="none";
   document.getElementById("f-zone").classList.remove("has-file");
-  document.getElementById("f-ico").textContent="\uD83D\uDCF8";
+  document.getElementById("f-ico").textContent="📸";
   document.getElementById("f-file").value="";
   document.getElementById("f-size").textContent="";
 };
