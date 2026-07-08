@@ -508,6 +508,23 @@ window.confirmPin = () => {
   if (pinValue.length === 4) checkPin();
 };
 
+window.showChangePinScreen = function(isFirst) {
+  document.getElementById("sc-pin").style.display = "none";
+  document.getElementById("sc-login").style.display = "none";
+  document.getElementById("sc-change-pin").style.display = "flex";
+  document.getElementById("change-pin-sub").textContent = isFirst
+    ? "Este e seu primeiro acesso. Crie um PIN pessoal de 4 digitos."
+    : "Digite o novo PIN de 4 digitos.";
+  changePinStep = 0;
+  newPinTemp = "";
+  newPinValue = "";
+  window.updatePinDots("new-pin-dots", 0);
+  document.getElementById("new-pin-error").style.opacity = "0";
+  const btn = document.getElementById("new-pin-confirm-btn");
+  if (btn) { btn.style.opacity=".4"; btn.style.pointerEvents="none"; }
+};
+window.showChangePinModal = () => window.showChangePinScreen(false);
+
 async function checkPin() {
   const btn = document.getElementById("pin-confirm-btn");
   if (btn) { btn.style.opacity = ".4"; btn.style.pointerEvents = "none"; btn.textContent = "..."; }
