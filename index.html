@@ -201,11 +201,11 @@
     <button class="pin-btn" onclick="pinPress('7')">7</button>
     <button class="pin-btn" onclick="pinPress('8')">8</button>
     <button class="pin-btn" onclick="pinPress('9')">9</button>
-    <div></div>
-    <button class="pin-btn" onclick="pinPress('0')">0</button>
     <button class="pin-btn" onclick="pinDel()" style="font-size:18px">&#9003;</button>
+    <button class="pin-btn" onclick="pinPress('0')">0</button>
+    <button class="pin-btn pin-btn-confirm" id="pin-confirm-btn" onclick="confirmPin()" style="background:var(--accent);color:var(--accent-text);font-size:22px;opacity:.4;pointer-events:none">&#10003;</button>
   </div>
-  <p id="pin-error" style="color:var(--danger);font-size:13px;margin-top:16px;opacity:0;transition:opacity .3s">PIN incorreto</p>
+  <p id="pin-error" style="color:var(--danger);font-size:13px;margin-top:16px;opacity:0;transition:opacity .3s">PIN incorreto. Tente novamente.</p>
 </div>
 
 <!-- CHANGE PIN SCREEN -->
@@ -227,9 +227,9 @@
     <button class="pin-btn" onclick="newPinPress('7')">7</button>
     <button class="pin-btn" onclick="newPinPress('8')">8</button>
     <button class="pin-btn" onclick="newPinPress('9')">9</button>
-    <div></div>
-    <button class="pin-btn" onclick="newPinPress('0')">0</button>
     <button class="pin-btn" onclick="newPinDel()" style="font-size:18px">&#9003;</button>
+    <button class="pin-btn" onclick="newPinPress('0')">0</button>
+    <button class="pin-btn" id="new-pin-confirm-btn" onclick="confirmNewPin()" style="background:var(--accent);color:var(--accent-text);font-size:22px;opacity:.4;pointer-events:none">&#10003;</button>
   </div>
   <p id="new-pin-error" style="color:var(--danger);font-size:13px;margin-top:16px;opacity:0">Os PINs nao coincidem. Tente novamente.</p>
 </div>
@@ -479,15 +479,31 @@ window.pinPress = d => {
   if (pinValue.length >= 4) return;
   pinValue += d;
   updatePinDots("pin-dots", pinValue.length);
-  if (pinValue.length === 4) setTimeout(checkPin, 100);
+  const btn = document.getElementById("pin-confirm-btn");
+  if (btn) {
+    if (pinValue.length === 4) {
+      btn.style.opacity = "1";
+      btn.style.pointerEvents = "auto";
+    } else {
+      btn.style.opacity = ".4";
+      btn.style.pointerEvents = "none";
+    }
+  }
 };
 window.pinDel = () => {
   pinValue = pinValue.slice(0,-1);
   updatePinDots("pin-dots", pinValue.length);
   document.getElementById("pin-error").style.opacity = "0";
+  const btn = document.getElementById("pin-confirm-btn");
+  if (btn) { btn.style.opacity = ".4"; btn.style.pointerEvents = "none"; }
+};
+window.confirmPin = () => {
+  if (pinValue.length === 4) checkPin();
 };
 
 async function checkPin() {
+  const btn = document.getElementById("pin-confirm-btn");
+  if (btn) { btn.style.opacity = ".4"; btn.style.pointerEvents = "none"; btn.textContent = "..."; }
   // Search all users for matching PIN
   const snap = await getDocs(collection(db, "admin_users"));
   let found = null;
@@ -498,19 +514,21 @@ async function checkPin() {
   if (found) {
     pinValue = "";
     updatePinDots("pin-dots", 0);
-    currentUserData = {...found, mode:'corp'};
+    if (btn) btn.textContent = "✓";
+    currentUserData = {...found, mode:"corp"};
     if (found.mustChangePin) {
       showChangePinScreen(true);
     } else {
       enterApp();
     }
   } else {
+    if (btn) { btn.textContent = "✓"; btn.style.opacity = ".4"; btn.style.pointerEvents = "none"; }
     document.getElementById("pin-error").style.opacity = "1";
     setTimeout(() => {
       pinValue = "";
       updatePinDots("pin-dots", 0);
       document.getElementById("pin-error").style.opacity = "0";
-    }, 1200);
+    }, 1500);
   }
 }
 
@@ -540,11 +558,20 @@ window.newPinPress = d => {
   if (newPinValue.length >= 4) return;
   newPinValue += d;
   updatePinDots("new-pin-dots", newPinValue.length);
-  if (newPinValue.length === 4) setTimeout(handleNewPin, 100);
+  const btn = document.getElementById("new-pin-confirm-btn");
+  if (btn) {
+    if (newPinValue.length === 4) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
+    else { btn.style.opacity=".4"; btn.style.pointerEvents="none"; }
+  }
 };
 window.newPinDel = () => {
   newPinValue = newPinValue.slice(0,-1);
   updatePinDots("new-pin-dots", newPinValue.length);
+  const btn = document.getElementById("new-pin-confirm-btn");
+  if (btn) { btn.style.opacity=".4"; btn.style.pointerEvents="none"; }
+};
+window.confirmNewPin = () => {
+  if (newPinValue.length === 4) handleNewPin();
 };
 
 async function handleNewPin() {
@@ -572,6 +599,8 @@ async function handleNewPin() {
         updatePinDots("new-pin-dots", 0);
         document.getElementById("change-pin-sub").textContent = "Digite o novo PIN de 4 digitos.";
         document.getElementById("new-pin-error").style.opacity = "0";
+        const btn = document.getElementById("new-pin-confirm-btn");
+        if (btn) { btn.style.opacity=".4"; btn.style.pointerEvents="none"; }
       }, 1200);
     }
   }
