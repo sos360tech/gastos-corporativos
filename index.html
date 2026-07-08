@@ -5,29 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 <meta name="theme-color" content="#0f0f0f" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Gastos Corp" />
 <title>Gastos Corporativos</title>
 <link rel="manifest" href="manifest.json" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>
-  :root{--bg:#0f0f0f;--bg2:#171717;--bg3:#1f1f1f;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0f0f0;--text2:#888;--text3:#555;--accent:#c8f55a;--accent-dim:rgba(200,245,90,0.12);--accent-text:#0f0f0f;--danger:#ff5252;--radius:16px;--radius-sm:10px;--font:'Sora',sans-serif;--mono:'DM Mono',monospace}
-  body.light{--bg:#f5f5f5;--bg2:#ffffff;--bg3:#ebebeb;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);--text:#1a1a1a;--text2:#555;--text3:#999;--accent:#2563eb;--accent-dim:rgba(37,99,235,0.1);--accent-text:#ffffff;--danger:#dc2626}
+  :root{--bg:#0f0f0f;--bg2:#171717;--bg3:#1f1f1f;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0f0f0;--text2:#888;--text3:#555;--accent:#c8f55a;--accent-dim:rgba(200,245,90,0.12);--accent-text:#0f0f0f;--danger:#ff5252;--success:#4caf50;--radius:16px;--radius-sm:10px;--font:'Sora',sans-serif;--mono:'DM Mono',monospace}
+  body.light{--bg:#f5f5f5;--bg2:#fff;--bg3:#ebebeb;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);--text:#1a1a1a;--text2:#555;--text3:#999;--accent:#2563eb;--accent-dim:rgba(37,99,235,0.1);--accent-text:#fff;--danger:#dc2626}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overscroll-behavior:none}
   body{max-width:430px;margin:0 auto;min-height:100dvh}
+  /* NAV */
   .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
   .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0 10px;font-size:10px;color:var(--text3);cursor:pointer;transition:color .2s;border:none;background:none;font-family:var(--font)}
   .nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
   .nav-btn.active{color:var(--accent)}
   .screen{display:none;flex-direction:column;min-height:100dvh;padding-bottom:calc(70px + env(safe-area-inset-bottom,0))}
   .screen.active{display:flex}
+  /* LOGIN */
+  #sc-login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:32px 24px;background:var(--bg)}
+  .login-logo{width:64px;height:64px;background:var(--accent);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:24px}
+  .login-title{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+  .login-sub{font-size:13px;color:var(--text3);margin-bottom:40px}
+  .login-divider{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:16px 0}
+  .login-divider span{font-size:12px;color:var(--text3);white-space:nowrap}
+  .login-divider:before,.login-divider:after{content:"";flex:1;height:1px;background:var(--border2)}
+  /* PIN SCREEN */
+  #sc-pin{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:32px 24px;background:var(--bg);position:relative}
+  .pin-back{position:absolute;top:24px;left:24px;background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;padding:8px}
+  .pin-dots{display:flex;gap:12px;margin:24px 0 32px}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
+  .pin-dot.filled{background:var(--accent);border-color:var(--accent)}
+  .pin-grid{display:grid;grid-template-columns:repeat(3,72px);gap:12px}
+  .pin-btn{width:72px;height:72px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-family:var(--font);font-size:22px;font-weight:500;cursor:pointer;transition:all .15s}
+  .pin-btn:active{background:var(--accent);color:var(--accent-text);transform:scale(.95)}
+  /* CHANGE PIN */
+  #sc-change-pin{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:32px 24px;background:var(--bg)}
+  /* TOP BAR */
   .topbar{padding:56px 20px 20px}
   .topbar-row{display:flex;align-items:center;justify-content:space-between}
   .topbar-label{font-size:11px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;font-weight:500;margin-bottom:4px}
   .topbar-title{font-size:24px;font-weight:600;letter-spacing:-.02em}
   .topbar-pill{background:var(--accent-dim);color:var(--accent);font-size:11px;padding:4px 10px;border-radius:99px;font-weight:500}
+  .user-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 20px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;color:var(--text3)}
+  .user-bar b{color:var(--text);font-weight:500}
+  /* SUMMARY */
   .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 16px}
   .summary-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px}
   .summary-card .lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
@@ -36,6 +60,7 @@
   .summary-card.acc .lbl{color:rgba(15,15,15,.6)}
   .summary-card.acc .val{color:var(--accent-text)}
   .sec-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:0 20px;margin-bottom:10px;font-weight:500}
+  /* EXPENSE LIST */
   .exp-item{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
   .exp-item:last-child{border-bottom:none}
   .exp-item:active{background:var(--bg3)}
@@ -47,6 +72,12 @@
   .empty{text-align:center;padding:60px 24px;color:var(--text3)}
   .empty .ico{font-size:40px;margin-bottom:12px}
   .empty p{font-size:14px;line-height:1.6}
+  /* STATUS BADGE */
+  .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:500;margin-left:6px}
+  .badge-pending{background:rgba(245,166,35,.15);color:#f5a623}
+  .badge-approved{background:rgba(76,175,80,.15);color:#4caf50}
+  .badge-rejected{background:rgba(255,82,82,.15);color:#ff5252}
+  /* FORM */
   .form-scroll{flex:1;overflow-y:auto;padding:0 0 24px}
   .fsec{margin:0 16px 20px}
   .fsec-title{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-weight:500}
@@ -76,8 +107,11 @@
   .sub-wrap{padding:0 16px}
   .btn-p{width:100%;padding:16px;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);transition:opacity .15s}
   .btn-p:active{opacity:.85}
+  .btn-sec{width:100%;padding:14px;background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font);margin-top:10px}
+  /* TOAST */
   .toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:99px;font-size:13px;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* MODAL */
   .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end}
   .modal-ov.open{display:flex}
   .modal{background:var(--bg2);border-radius:24px 24px 0 0;padding:20px;width:100%;max-height:80dvh;overflow-y:auto;padding-bottom:calc(24px + env(safe-area-inset-bottom,0))}
@@ -91,68 +125,73 @@
   .det-amt{font-family:var(--mono);font-size:28px;font-weight:500;color:var(--accent);margin-bottom:16px}
   .btn-d{width:100%;padding:14px;background:transparent;color:var(--danger);border:1px solid rgba(255,82,82,.3);border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font);margin-top:16px}
   .modal-img{width:100%;border-radius:var(--radius-sm);margin-top:12px;max-height:200px;object-fit:cover}
+  /* FILTER */
   .filter-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 16px;scrollbar-width:none}
   .filter-row::-webkit-scrollbar{display:none}
   .fchip{flex-shrink:0;font-size:12px;padding:6px 12px;border:1px solid var(--border);border-radius:99px;cursor:pointer;color:var(--text2);background:var(--bg2);transition:all .15s;white-space:nowrap;font-family:var(--font)}
   .fchip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
   .list-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin:0 16px;overflow:hidden}
+  /* SETTINGS */
   .set-item{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
   .set-item:last-child{border-bottom:none}
   .set-item .si-lbl{font-size:14px;font-weight:500}
   .set-item .si-sub{font-size:12px;color:var(--text3);margin-top:2px}
   .set-item svg{width:18px;height:18px;stroke:var(--text3);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  /* MONTH NAV */
   .month-row{display:flex;align-items:center;justify-content:space-between;padding:0 20px;margin-bottom:16px}
   .month-lbl{font-size:16px;font-weight:600}
   .month-nav{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+  /* SYNC DOT */
   .sdot{width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;margin-left:6px;vertical-align:middle;transition:background .3s}
-  .theme-toggle{display:flex;align-items:center;justify-content:space-between;width:100%}
+  .sdot.ok{background:var(--accent)}
+  .sdot.busy{background:#f5a623;animation:blink 1s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  /* TOGGLE */
   .toggle-switch{position:relative;width:48px;height:26px;flex-shrink:0}
   .toggle-switch input{opacity:0;width:0;height:0}
   .toggle-slider{position:absolute;inset:0;background:var(--bg3);border-radius:99px;cursor:pointer;transition:.3s;border:1px solid var(--border2)}
   .toggle-slider:before{content:"";position:absolute;width:20px;height:20px;left:2px;top:2px;background:var(--text3);border-radius:50%;transition:.3s}
   .toggle-switch input:checked + .toggle-slider{background:var(--accent)}
   .toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px);background:var(--accent-text)}
-  .sdot.ok{background:var(--accent)}
-  .sdot.busy{background:#f5a623;animation:blink 1s infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 </style>
+</head>
+<body>
 
 <!-- LOGIN SCREEN -->
-<div id="sc-login" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:32px 24px;background:var(--bg)">
-  <div style="width:64px;height:64px;background:var(--accent);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:24px">&#128179;</div>
-  <p style="font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px">Gastos Corporativos</p>
-  <p style="font-size:13px;color:var(--text3);margin-bottom:40px">SOS360</p>
+<div id="sc-login">
+  <div class="login-logo">&#128179;</div>
+  <p class="login-title">Gastos Corporativos</p>
+  <p class="login-sub">SOS360</p>
 
-  <button id="btn-google" onclick="loginGoogle()" style="width:100%;max-width:320px;padding:14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px">
+  <button onclick="showPinLogin()" style="width:100%;max-width:320px;padding:16px;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:10px">
+    &#128273; Acessar com PIN
+  </button>
+
+  <div class="login-divider" style="width:100%;max-width:320px"><span>ou</span></div>
+
+  <button onclick="loginGoogle()" style="width:100%;max-width:320px;padding:14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
     <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-    Entrar com minha conta Google
+    Entrar com Google (uso pessoal)
   </button>
 
-  <p style="font-size:12px;color:var(--text3);margin:8px 0">ou</p>
-
-  <button onclick="showPinScreen()" style="width:100%;max-width:320px;padding:14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:32px">
-    &#128273; Acesso Corporativo (PIN)
-  </button>
-
-  <p style="font-size:11px;color:var(--text3);text-align:center;max-width:280px;line-height:1.6">
-    <b>Conta Google:</b> seus lancamentos pessoais<br>
-    <b>PIN Corporativo:</b> banco compartilhado da equipe
+  <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:32px;max-width:280px;line-height:1.6">
+    <b style="color:var(--text2)">PIN:</b> acesso corporativo gerenciado pelo admin<br>
+    <b style="color:var(--text2)">Google:</b> conta pessoal individual
   </p>
 </div>
 
-<!-- PIN SCREEN -->
-<div id="sc-pin" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:32px 24px;background:var(--bg)">
-  <button onclick="showLogin()" style="position:absolute;top:24px;left:24px;background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer">&#8592;</button>
-  <div style="width:56px;height:56px;background:var(--accent-dim);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:20px">&#128273;</div>
+<!-- PIN LOGIN SCREEN -->
+<div id="sc-pin">
+  <button class="pin-back" onclick="showLogin()">&#8592;</button>
+  <div style="width:52px;height:52px;background:var(--accent-dim);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px">&#128273;</div>
   <p style="font-size:18px;font-weight:600;margin-bottom:6px">Acesso Corporativo</p>
-  <p style="font-size:13px;color:var(--text3);margin-bottom:32px">Digite o PIN de 4 digitos</p>
-  <div style="display:flex;gap:12px;margin-bottom:32px" id="pin-dots">
-    <div class="pin-dot"></div>
-    <div class="pin-dot"></div>
-    <div class="pin-dot"></div>
-    <div class="pin-dot"></div>
+  <p style="font-size:13px;color:var(--text3);margin-bottom:4px">Digite seu PIN de 4 digitos</p>
+  <p id="pin-user-hint" style="font-size:12px;color:var(--accent);margin-bottom:0"></p>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+    <div class="pin-dot"></div><div class="pin-dot"></div>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(3,72px);gap:12px">
+  <div class="pin-grid">
     <button class="pin-btn" onclick="pinPress('1')">1</button>
     <button class="pin-btn" onclick="pinPress('2')">2</button>
     <button class="pin-btn" onclick="pinPress('3')">3</button>
@@ -169,14 +208,31 @@
   <p id="pin-error" style="color:var(--danger);font-size:13px;margin-top:16px;opacity:0;transition:opacity .3s">PIN incorreto</p>
 </div>
 
-<style>
-  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
-  .pin-dot.filled{background:var(--accent);border-color:var(--accent)}
-  .pin-btn{width:72px;height:72px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-family:var(--font);font-size:22px;font-weight:500;cursor:pointer;transition:all .15s}
-  .pin-btn:active{background:var(--accent);color:var(--accent-text);transform:scale(.95)}
-  .user-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 20px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;color:var(--text3)}
-  .user-bar b{color:var(--text);font-weight:500}
-</style>
+<!-- CHANGE PIN SCREEN -->
+<div id="sc-change-pin">
+  <div style="width:52px;height:52px;background:var(--accent-dim);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px">&#128274;</div>
+  <p style="font-size:18px;font-weight:600;margin-bottom:6px">Crie seu PIN</p>
+  <p style="font-size:13px;color:var(--text3);margin-bottom:4px" id="change-pin-sub">Este e seu primeiro acesso. Crie um PIN pessoal.</p>
+  <div class="pin-dots" id="new-pin-dots">
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+  </div>
+  <div class="pin-grid">
+    <button class="pin-btn" onclick="newPinPress('1')">1</button>
+    <button class="pin-btn" onclick="newPinPress('2')">2</button>
+    <button class="pin-btn" onclick="newPinPress('3')">3</button>
+    <button class="pin-btn" onclick="newPinPress('4')">4</button>
+    <button class="pin-btn" onclick="newPinPress('5')">5</button>
+    <button class="pin-btn" onclick="newPinPress('6')">6</button>
+    <button class="pin-btn" onclick="newPinPress('7')">7</button>
+    <button class="pin-btn" onclick="newPinPress('8')">8</button>
+    <button class="pin-btn" onclick="newPinPress('9')">9</button>
+    <div></div>
+    <button class="pin-btn" onclick="newPinPress('0')">0</button>
+    <button class="pin-btn" onclick="newPinDel()" style="font-size:18px">&#9003;</button>
+  </div>
+  <p id="new-pin-error" style="color:var(--danger);font-size:13px;margin-top:16px;opacity:0">Os PINs nao coincidem. Tente novamente.</p>
+</div>
 
 <!-- HOME -->
 <div class="screen" id="sc-home">
@@ -187,7 +243,7 @@
       <span class="topbar-pill" id="pill-month">Mai 2026</span>
     </div>
   </div>
-  <div id="user-bar" class="user-bar" style="display:none">
+  <div id="user-bar" class="user-bar">
     <span>&#128100; <b id="user-bar-name"></b></span>
     <span onclick="doLogout()" style="cursor:pointer;color:var(--danger)">Sair</span>
   </div>
@@ -199,8 +255,8 @@
   <div class="summary-grid">
     <div class="summary-card acc"><p class="lbl">Total do mes</p><p class="val" id="s-total">R$ 0</p></div>
     <div class="summary-card"><p class="lbl">Lancamentos</p><p class="val" id="s-count">0</p></div>
-    <div class="summary-card"><p class="lbl">Maior gasto</p><p class="val" id="s-top">--</p></div>
-    <div class="summary-card"><p class="lbl">Centro top</p><p class="val" id="s-area" style="font-size:12px;font-family:var(--font)">--</p></div>
+    <div class="summary-card"><p class="lbl">Aprovados</p><p class="val" id="s-approved" style="color:var(--success)">0</p></div>
+    <div class="summary-card"><p class="lbl">Pendentes</p><p class="val" id="s-pending" style="color:#f5a623">0</p></div>
   </div>
   <p class="sec-title">Ultimos lancamentos</p>
   <div class="list-card"><div id="home-list"></div></div>
@@ -216,7 +272,6 @@
         <div class="field"><label>Data *</label><input type="date" id="f-date"></div>
         <div class="field"><label>Horario</label><input type="time" id="f-time"></div>
       </div>
-
       <div class="field">
         <label>Valor *</label>
         <div class="amt-wrap">
@@ -239,21 +294,14 @@
       <p class="fsec-title">Centro de custo *</p>
       <div class="field">
         <select id="f-area">
-          <option value="">Selecione o centro de custo...</option>
-          <option>MATRIZ</option>
-          <option>SALOBO</option>
-          <option>S11D</option>
-          <option>CARAJAS</option>
-          <option>SAO LUIS - SEDE</option>
-          <option>SAO LUIS - VALE</option>
-          <option>PARAGOMINAS - ETE</option>
-          <option>PARAGOMINAS - CIP</option>
-          <option>SANTAREM</option>
-          <option>MARABA</option>
+          <option value="">Selecione...</option>
+          <option>MATRIZ</option><option>SALOBO</option><option>S11D</option>
+          <option>CARAJAS</option><option>SAO LUIS - SEDE</option><option>SAO LUIS - VALE</option>
+          <option>PARAGOMINAS - ETE</option><option>PARAGOMINAS - CIP</option>
+          <option>SANTAREM</option><option>MARABA</option>
         </select>
       </div>
     </div>
-
     <div class="fsec">
       <p class="fsec-title">Categoria *</p>
       <div class="chips" id="f-cat">
@@ -271,13 +319,13 @@
     </div>
     <div class="fsec">
       <p class="fsec-title">Descricao</p>
-      <div class="field"><textarea id="f-desc" placeholder="Motivo e detalhes da compra..." maxlength="300"></textarea></div>
+      <div class="field"><textarea id="f-desc" placeholder="Motivo e detalhes..." maxlength="300"></textarea></div>
     </div>
     <div class="fsec">
       <p class="fsec-title">Comprovante</p>
       <div class="rz" id="f-zone">
         <input type="file" id="f-file" accept="image/*" capture="environment" onchange="onFile(this)">
-        <div class="rz-ico" id="f-ico">📸</div>
+        <div class="rz-ico" id="f-ico">&#128248;</div>
         <p>Tirar foto ou anexar comprovante</p>
         <small>JPG ou PNG - comprimido automaticamente</small>
       </div>
@@ -315,25 +363,26 @@
   <div class="topbar"><p class="topbar-label">App</p><p class="topbar-title">Configuracoes</p></div>
   <div class="list-card" style="margin:0 16px 12px">
     <div class="set-item">
-      <div><p class="si-lbl">Gastos Corporativos SOS360</p><p class="si-sub">v4.0 - Auth + Sync</p></div>
+      <div><p class="si-lbl">Gastos Corporativos SOS360</p><p class="si-sub">v5.0 - Autenticacao por PIN</p></div>
       <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M12 8v4l3 3"/></svg>
     </div>
+    <div class="set-item" style="cursor:pointer" onclick="showChangePinModal()">
+      <div><p class="si-lbl">Trocar meu PIN</p><p class="si-sub">Alterar o PIN de acesso</p></div>
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
     <div class="set-item">
-      <div>
-        <p class="si-lbl" id="theme-label">Tema escuro</p>
-        <p class="si-sub">Toque para alternar</p>
-      </div>
+      <div><p class="si-lbl" id="theme-label">Tema escuro</p><p class="si-sub">Toque para alternar</p></div>
       <label class="toggle-switch">
         <input type="checkbox" id="theme-toggle" onchange="toggleTheme(this.checked)">
         <span class="toggle-slider"></span>
       </label>
     </div>
     <div class="set-item" style="cursor:pointer" onclick="doExport()">
-      <div><p class="si-lbl">Exportar CSV</p><p class="si-sub">Baixar todos os lancamentos</p></div>
+      <div><p class="si-lbl">Exportar CSV</p><p class="si-sub">Baixar meus lancamentos</p></div>
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </div>
     <div class="set-item" style="cursor:pointer" onclick="doLogout()">
-      <div><p class="si-lbl" style="color:var(--danger)">Sair da conta</p><p class="si-sub" id="cfg-user-sub">-</p></div>
+      <div><p class="si-lbl" style="color:var(--danger)">Sair</p><p class="si-sub" id="cfg-user-sub">-</p></div>
       <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     </div>
   </div>
@@ -359,6 +408,7 @@
   </button>
 </nav>
 
+<!-- MODAL DETALHE -->
 <div class="modal-ov" id="modal-ov" onclick="closeModal(event)">
   <div class="modal"><div class="modal-handle"></div><div id="modal-body"></div></div>
 </div>
@@ -366,8 +416,8 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, where, onSnapshot, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyDdFODD9c1PHLKoVV0MqLmqSq2-A43xIDw",
@@ -381,179 +431,183 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// PIN corporativo - altere aqui para mudar o PIN
-// v4.1 - Firebase Hosting deploy
-const CORP_PIN = "3843";
-
-// Check redirect result on page load
-console.log("[AUTH] Page loaded, checking redirect result...");
-console.log("[AUTH] loginMode:", localStorage.getItem("loginMode"));
-
-getRedirectResult(auth).then(result => {
-  console.log("[AUTH] getRedirectResult resolved:", result ? result.user?.email : "null");
-  if (result && result.user) {
-    isCorpMode = false;
-    currentUser = result.user;
-    localStorage.removeItem("loginMode");
-    document.getElementById("sc-login").style.display = "none";
-    document.getElementById("sc-pin").style.display = "none";
-    document.getElementById("main-nav").style.display = "flex";
-    enterApp(result.user.displayName || result.user.email || "Usuario");
-  }
-}).catch(e => {
-  console.error("[AUTH] getRedirectResult error:", e.code, e.message);
-  toast("Erro no login: " + (e.message||"").slice(0,60));
-});
-
-// onAuthStateChanged handles persistent sessions
-onAuthStateChanged(auth, user => {
-  console.log("[AUTH] onAuthStateChanged:", user ? user.email : "null", "| loginMode:", localStorage.getItem("loginMode"));
-  if (user && !currentUser) {
-    currentUser = user;
-    const mode = localStorage.getItem("loginMode");
-    if (mode === "corp") {
-      isCorpMode = true;
-      enterApp("Corporativo");
-    } else if (mode !== "redirecting") {
-      isCorpMode = false;
-      enterApp(user.displayName || user.email || "Usuario");
-    }
-  }
-});
-const CORP_UID = "corporativo";
-
 let expenses = [];
 let receipt = null;
 let filter = "todos";
 let vMonth = new Date();
-let currentUser = null;
-let isCorpMode = false;
-let unsubSnapshot = null;
+let currentUserData = null; // {id, name, pin, mustChangePIn, mode:'corp'|'google'}
+let unsubExpenses = null;
+let changePinStep = 0; // 0=enter new, 1=confirm
+let newPinTemp = "";
+let newPinValue = "";
 
 const MP = ["Janeiro","Fevereiro","Marco","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const MS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-// ---- AUTH ----
-
+// ---- AUTH - GOOGLE ----
+onAuthStateChanged(auth, user => {
+  if (user && !currentUserData) {
+    currentUserData = {id: user.uid, name: user.displayName||user.email, mode:'google', email: user.email};
+    enterApp();
+  }
+});
 
 window.loginGoogle = async () => {
-  isCorpMode = false;
-  document.getElementById("btn-google").textContent = "Entrando...";
   try {
     await setPersistence(auth, browserLocalPersistence);
-    const result = await signInWithPopup(auth, provider);
-    currentUser = result.user;
-    localStorage.removeItem("loginMode");
-    enterApp(result.user.displayName || result.user.email || "Usuario");
-  } catch(e) {
-    console.error("[AUTH] Popup error:", e.code, e.message);
-    if (e.code === "auth/popup-blocked" || e.code === "auth/popup-closed-by-user") {
-      // Fallback to redirect
-      localStorage.setItem("loginMode", "redirecting");
-      document.getElementById("btn-google").textContent = "Redirecionando...";
-      await signInWithRedirect(auth, provider);
-    } else {
-      toast("Erro no login: " + (e.message||"").slice(0,60));
-      document.getElementById("btn-google").textContent = "Entrar com minha conta Google";
-    }
-  }
+    await signInWithPopup(auth, provider);
+  } catch(e) { toast("Erro: " + e.message); }
 };
 
-// PIN logic
+// ---- AUTH - PIN ----
 let pinValue = "";
-window.showPinScreen = () => {
+
+window.showPinLogin = () => {
   document.getElementById("sc-login").style.display = "none";
   document.getElementById("sc-pin").style.display = "flex";
   pinValue = "";
-  updatePinDots();
+  updatePinDots("pin-dots", 0);
+  document.getElementById("pin-error").style.opacity = "0";
 };
 window.showLogin = () => {
   document.getElementById("sc-pin").style.display = "none";
   document.getElementById("sc-login").style.display = "flex";
   pinValue = "";
-  updatePinDots();
 };
+
 window.pinPress = d => {
   if (pinValue.length >= 4) return;
   pinValue += d;
-  updatePinDots();
-  if (pinValue.length === 4) checkPin();
+  updatePinDots("pin-dots", pinValue.length);
+  if (pinValue.length === 4) setTimeout(checkPin, 100);
 };
 window.pinDel = () => {
   pinValue = pinValue.slice(0,-1);
-  updatePinDots();
+  updatePinDots("pin-dots", pinValue.length);
   document.getElementById("pin-error").style.opacity = "0";
 };
-function updatePinDots() {
-  document.querySelectorAll(".pin-dot").forEach((dot,i) => {
-    dot.classList.toggle("filled", i < pinValue.length);
-  });
-}
+
 async function checkPin() {
-  if (pinValue === CORP_PIN) {
-    isCorpMode = true;
-    localStorage.setItem("loginMode", "corp");
-    try {
-      await signInAnonymously(auth);
-      enterApp("Corporativo");
-    } catch(e) {
-      enterApp("Corporativo");
+  // Search all users for matching PIN
+  const snap = await getDocs(collection(db, "admin_users"));
+  let found = null;
+  snap.forEach(d => {
+    const u = d.data();
+    if (u.pin === pinValue && !u.blocked) found = {...u, id: d.id};
+  });
+  if (found) {
+    pinValue = "";
+    updatePinDots("pin-dots", 0);
+    currentUserData = {...found, mode:'corp'};
+    if (found.mustChangePin) {
+      showChangePinScreen(true);
+    } else {
+      enterApp();
     }
   } else {
     document.getElementById("pin-error").style.opacity = "1";
     setTimeout(() => {
       pinValue = "";
-      updatePinDots();
+      updatePinDots("pin-dots", 0);
       document.getElementById("pin-error").style.opacity = "0";
     }, 1200);
   }
 }
 
-function enterApp(userName) {
-  // Hide login screens
+function updatePinDots(dotsId, count) {
+  document.querySelectorAll("#"+dotsId+" .pin-dot").forEach((dot,i) => {
+    dot.classList.toggle("filled", i < count);
+  });
+}
+
+// ---- CHANGE PIN ----
+function showChangePinScreen(isFirst) {
+  document.getElementById("sc-pin").style.display = "none";
+  document.getElementById("sc-change-pin").style.display = "flex";
+  document.getElementById("change-pin-sub").textContent = isFirst
+    ? "Este e seu primeiro acesso. Crie um PIN pessoal de 4 digitos."
+    : "Digite o novo PIN de 4 digitos.";
+  changePinStep = 0;
+  newPinTemp = "";
+  newPinValue = "";
+  updatePinDots("new-pin-dots", 0);
+  document.getElementById("new-pin-error").style.opacity = "0";
+}
+
+window.showChangePinModal = () => showChangePinScreen(false);
+
+window.newPinPress = d => {
+  if (newPinValue.length >= 4) return;
+  newPinValue += d;
+  updatePinDots("new-pin-dots", newPinValue.length);
+  if (newPinValue.length === 4) setTimeout(handleNewPin, 100);
+};
+window.newPinDel = () => {
+  newPinValue = newPinValue.slice(0,-1);
+  updatePinDots("new-pin-dots", newPinValue.length);
+};
+
+async function handleNewPin() {
+  if (changePinStep === 0) {
+    newPinTemp = newPinValue;
+    newPinValue = "";
+    changePinStep = 1;
+    document.getElementById("change-pin-sub").textContent = "Confirme o novo PIN.";
+    updatePinDots("new-pin-dots", 0);
+  } else {
+    if (newPinValue === newPinTemp) {
+      // Save new PIN
+      await updateDoc(doc(db, "admin_users", currentUserData.id), {pin: newPinValue, mustChangePin: false});
+      currentUserData.pin = newPinValue;
+      currentUserData.mustChangePin = false;
+      toast("PIN alterado com sucesso!");
+      document.getElementById("sc-change-pin").style.display = "none";
+      enterApp();
+    } else {
+      document.getElementById("new-pin-error").style.opacity = "1";
+      setTimeout(() => {
+        newPinValue = "";
+        newPinTemp = "";
+        changePinStep = 0;
+        updatePinDots("new-pin-dots", 0);
+        document.getElementById("change-pin-sub").textContent = "Digite o novo PIN de 4 digitos.";
+        document.getElementById("new-pin-error").style.opacity = "0";
+      }, 1200);
+    }
+  }
+}
+
+// ---- ENTER APP ----
+function enterApp() {
   document.getElementById("sc-login").style.display = "none";
   document.getElementById("sc-pin").style.display = "none";
-  // Show nav and app
+  document.getElementById("sc-change-pin").style.display = "none";
   document.getElementById("main-nav").style.display = "flex";
-  // User bar
-  const bar = document.getElementById("user-bar");
-  const barName = document.getElementById("user-bar-name");
-  const cfgSub = document.getElementById("cfg-user-sub");
-  if (isCorpMode) {
-    bar.style.display = "flex";
-    barName.textContent = "Modo Corporativo";
-    cfgSub.textContent = "Modo Corporativo - banco compartilhado";
-  } else {
-    bar.style.display = "flex";
-    barName.textContent = userName;
-    cfgSub.textContent = userName;
-  }
-  // Subscribe to correct collection
+  document.getElementById("user-bar-name").textContent = currentUserData.name;
+  document.getElementById("cfg-user-sub").textContent = currentUserData.name + (currentUserData.mode==='corp' ? " (Corporativo)" : " (Google)");
   subscribeExpenses();
   goTo("home", document.getElementById("nb-home"));
   // Restore theme
-  const savedTheme = localStorage.getItem("theme");
-  if (savedTheme === "light") {
+  if (localStorage.getItem("theme")==="light") {
     document.body.classList.add("light");
     const tog = document.getElementById("theme-toggle");
     if (tog) tog.checked = true;
-    const lbl = document.getElementById("theme-label");
-    if (lbl) lbl.textContent = "Tema claro";
+    document.getElementById("theme-label").textContent = "Tema claro";
   }
 }
 
 function subscribeExpenses() {
-  if (unsubSnapshot) unsubSnapshot();
+  if (unsubExpenses) unsubExpenses();
   let q;
-  if (isCorpMode) {
-    // Corporate: all expenses in shared collection
-    q = query(collection(db, "expenses"), orderBy("createdAt","desc"));
+  if (currentUserData.mode === 'corp') {
+    // Corporate user: only their own expenses in shared collection
+    q = query(collection(db,"expenses"), where("userId","==",currentUserData.id), orderBy("createdAt","desc"));
   } else {
-    // Personal: only this user's expenses
-    q = query(collection(db, "expenses_personal"), where("uid","==", currentUser.uid), orderBy("createdAt","desc"));
+    // Google user: personal collection
+    q = query(collection(db,"expenses_personal"), where("uid","==",currentUserData.id), orderBy("createdAt","desc"));
   }
-  unsubSnapshot = onSnapshot(q, snap => {
-    expenses = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  unsubExpenses = onSnapshot(q, snap => {
+    expenses = snap.docs.map(d => ({...d.data(), id:d.id}));
     dot("ok");
     renderHome();
     renderHist();
@@ -561,22 +615,20 @@ function subscribeExpenses() {
 }
 
 window.doLogout = async () => {
-  if (!confirm("Deseja sair da conta?")) return;
-  if (unsubSnapshot) unsubSnapshot();
-  await signOut(auth);
+  if (!confirm("Deseja sair?")) return;
+  if (unsubExpenses) unsubExpenses();
+  if (currentUserData?.mode === 'google') await signOut(auth);
   expenses = [];
-  isCorpMode = false;
-  currentUser = null;
+  currentUserData = null;
   document.getElementById("main-nav").style.display = "none";
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("sc-login").style.display = "flex";
-  pinValue = "";
 };
 
 // ---- APP ----
 function dot(s) {
   const d = document.getElementById("sdot");
-  if (d) d.className = "sdot" + (s ? " "+s : "");
+  if (d) d.className = "sdot"+(s?" "+s:"");
 }
 
 function goTo(s, btn) {
@@ -584,101 +636,100 @@ function goTo(s, btn) {
   document.querySelectorAll(".nav-btn").forEach(x => x.classList.remove("active"));
   document.getElementById("sc-"+s).classList.add("active");
   if (btn) btn.classList.add("active");
-  if (s === "home") renderHome();
-  if (s === "hist") renderHist();
-  if (s === "novo") initForm();
+  if (s==="home") renderHome();
+  if (s==="hist") renderHist();
+  if (s==="novo") initForm();
   window.scrollTo(0,0);
 }
 window.goTo = goTo;
 window.chMonth = d => { vMonth = new Date(vMonth.getFullYear(), vMonth.getMonth()+d, 1); renderHome(); };
 
-const fBRL = v => "R$ " + parseFloat(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-const fDate = s => { if (!s) return ""; const p = s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; };
+const fBRL = v => "R$ "+parseFloat(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fDate = s => { if(!s) return ""; const p=s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; };
+
+function statusBadge(s) {
+  if (s==="approved") return '<span class="badge badge-approved">&#10003; Aprovado</span>';
+  if (s==="rejected") return '<span class="badge badge-rejected">&#10007; Reprovado</span>';
+  return '<span class="badge badge-pending">&#9679; Pendente</span>';
+}
 
 function renderHome() {
-  const y = vMonth.getFullYear(), m = vMonth.getMonth();
+  const y=vMonth.getFullYear(), m=vMonth.getMonth();
   document.getElementById("lbl-month").textContent = MP[m]+" "+y;
   document.getElementById("pill-month").textContent = MS[m]+" "+y;
-  const f = expenses.filter(e => { const d = new Date(e.date+"T00:00"); return d.getFullYear()===y && d.getMonth()===m; });
-  const tot = f.reduce((s,e) => s+parseFloat(e.amount), 0);
-  document.getElementById("s-total").textContent = tot ? fBRL(tot) : "R$ 0";
+  const f=expenses.filter(e=>{const d=new Date(e.date+"T00:00");return d.getFullYear()===y&&d.getMonth()===m;});
+  const tot=f.reduce((s,e)=>s+parseFloat(e.amount||0),0);
+  document.getElementById("s-total").textContent = tot?fBRL(tot):"R$ 0";
   document.getElementById("s-count").textContent = f.length;
-  const top = f.slice().sort((a,b) => b.amount-a.amount)[0];
-  document.getElementById("s-top").textContent = top ? fBRL(top.amount) : "--";
-  const ac = {};
-  f.forEach(e => { ac[e.area]=(ac[e.area]||0)+parseFloat(e.amount); });
-  const ta = Object.entries(ac).sort((a,b) => b[1]-a[1])[0];
-  document.getElementById("s-area").textContent = ta ? ta[0] : "--";
-  const el = document.getElementById("home-list");
-  if (!f.length) { el.innerHTML = emptyHTML("&#128193;","Nenhum lancamento em "+MP[m]); return; }
-  el.innerHTML = f.slice(0,5).map(eRow).join("");
+  document.getElementById("s-approved").textContent = f.filter(e=>e.status==="approved").length;
+  document.getElementById("s-pending").textContent = f.filter(e=>!e.status||e.status==="pending").length;
+  const el=document.getElementById("home-list");
+  if (!f.length){el.innerHTML='<div class="empty"><div class="ico">&#128193;</div><p>Nenhum lancamento em '+MP[m]+'</p></div>';return;}
+  el.innerHTML=f.slice(0,5).map(eRow).join("");
 }
 
 function renderHist() {
-  const el = document.getElementById("hist-list");
-  const data = filter==="todos" ? expenses.slice() : expenses.filter(e => e.area===filter);
-  if (!data.length) { el.innerHTML = emptyHTML("&#128269;","Nenhum resultado"); return; }
-  el.innerHTML = data.map(eRow).join("");
+  const el=document.getElementById("hist-list");
+  const data=filter==="todos"?expenses.slice():expenses.filter(e=>e.area===filter);
+  if(!data.length){el.innerHTML='<div class="empty"><div class="ico">&#128269;</div><p>Nenhum resultado</p></div>';return;}
+  el.innerHTML=data.map(eRow).join("");
 }
 
-function emptyHTML(ico,txt) {
-  return '<div class="empty"><div class="ico">'+ico+'</div><p>'+txt+'</p></div>';
-}
 function eRow(e) {
   return '<div class="exp-item" data-id="'+e.id+'" onclick="openDetail(this.dataset.id)">'
     +'<div class="exp-icon">&#128179;</div>'
-    +'<div class="exp-info"><p class="exp-merchant">'+(e.user||'--')+'</p>'
-    +'<p class="exp-meta">'+fDate(e.date)+' &middot; '+e.area+'</p></div>'
+    +'<div class="exp-info"><p class="exp-merchant">'+e.area+''+statusBadge(e.status||"pending")+'</p>'
+    +'<p class="exp-meta">'+fDate(e.date)+' &middot; '+e.category+'</p></div>'
     +'<span class="exp-amount">'+fBRL(e.amount)+'</span></div>';
 }
 
-document.querySelectorAll("#frow .fchip").forEach(c => {
-  c.onclick = () => {
-    document.querySelectorAll("#frow .fchip").forEach(x => x.classList.remove("active"));
-    c.classList.add("active"); filter = c.dataset.v; renderHist();
+document.querySelectorAll("#frow .fchip").forEach(c=>{
+  c.onclick=()=>{
+    document.querySelectorAll("#frow .fchip").forEach(x=>x.classList.remove("active"));
+    c.classList.add("active");filter=c.dataset.v;renderHist();
   };
 });
 
 function initForm() {
-  document.getElementById("f-date").value = new Date().toISOString().split("T")[0];
-  document.getElementById("f-time").value = new Date().toTimeString().slice(0,5);
-  ["f-amount","f-desc"].forEach(id => document.getElementById(id).value="");
+  document.getElementById("f-date").value=new Date().toISOString().split("T")[0];
+  document.getElementById("f-time").value=new Date().toTimeString().slice(0,5);
+  ["f-amount","f-desc"].forEach(id=>document.getElementById(id).value="");
   document.getElementById("f-area").value="";
   receipt=null;
   document.getElementById("f-prev-wrap").style.display="none";
   document.getElementById("f-zone").classList.remove("has-file");
-  document.getElementById("f-ico").textContent="📸";
+  document.getElementById("f-ico").textContent="\uD83D\uDCF8";
   document.getElementById("f-file").value="";
   document.getElementById("f-size").textContent="";
-  document.querySelectorAll("#f-inst .chip").forEach(c => c.classList.toggle("active",c.dataset.v==="1"));
-  document.querySelectorAll("#f-cat .chip").forEach(c => c.classList.remove("active"));
+  document.querySelectorAll("#f-inst .chip").forEach(c=>c.classList.toggle("active",c.dataset.v==="1"));
+  document.querySelectorAll("#f-cat .chip").forEach(c=>c.classList.remove("active"));
 }
 
-document.querySelectorAll("#f-inst .chip").forEach(c => {
-  c.onclick = () => { document.querySelectorAll("#f-inst .chip").forEach(x => x.classList.remove("active")); c.classList.add("active"); };
+document.querySelectorAll("#f-inst .chip").forEach(c=>{
+  c.onclick=()=>{document.querySelectorAll("#f-inst .chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");};
 });
-document.querySelectorAll("#f-cat .chip").forEach(c => {
-  c.onclick = () => { document.querySelectorAll("#f-cat .chip").forEach(x => x.classList.remove("active")); c.classList.add("active"); };
+document.querySelectorAll("#f-cat .chip").forEach(c=>{
+  c.onclick=()=>{document.querySelectorAll("#f-cat .chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");};
 });
 
 window.onFile = input => {
-  const f = input.files[0]; if (!f) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX=600; let w=img.width, h=img.height;
-      if (w>h){ if(w>MAX){h=Math.round(h*MAX/w);w=MAX;} } else { if(h>MAX){w=Math.round(w*MAX/h);h=MAX;} }
-      const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=600;let w=img.width,h=img.height;
+      if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
+      const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
       canvas.getContext("2d").drawImage(img,0,0,w,h);
-      let q=0.4, compressed=canvas.toDataURL("image/jpeg",q);
-      while(compressed.length>700000 && q>0.1){ q=Math.round((q-0.1)*10)/10; compressed=canvas.toDataURL("image/jpeg",q); }
+      let q=0.4,compressed=canvas.toDataURL("image/jpeg",q);
+      while(compressed.length>700000&&q>0.1){q=Math.round((q-0.1)*10)/10;compressed=canvas.toDataURL("image/jpeg",q);}
       receipt=compressed;
       const kb=Math.round(receipt.length*0.75/1024);
       document.getElementById("f-prev").src=receipt;
       document.getElementById("f-prev-wrap").style.display="block";
       document.getElementById("f-zone").classList.add("has-file");
-      document.getElementById("f-ico").textContent="✅";
+      document.getElementById("f-ico").textContent="\u2705";
       document.getElementById("f-size").textContent=kb+" KB";
     };
     img.src=ev.target.result;
@@ -686,11 +737,11 @@ window.onFile = input => {
   reader.readAsDataURL(f);
 };
 
-window.rmFile = () => {
+window.rmFile=()=>{
   receipt=null;
   document.getElementById("f-prev-wrap").style.display="none";
   document.getElementById("f-zone").classList.remove("has-file");
-  document.getElementById("f-ico").textContent="📸";
+  document.getElementById("f-ico").textContent="\uD83D\uDCF8";
   document.getElementById("f-file").value="";
   document.getElementById("f-size").textContent="";
 };
@@ -700,14 +751,13 @@ window.saveExp = async () => {
   const area=document.getElementById("f-area").value;
   const cat=document.querySelector("#f-cat .chip.active");
   const inst=document.querySelector("#f-inst .chip.active");
-  const user = isCorpMode ? "Corporativo" : (currentUser?.displayName || currentUser?.email || "Usuario");
-  if (!amount||parseFloat(amount)<=0){ toast("Informe o valor"); return; }
-  if (!area){ toast("Selecione o centro de custo"); return; }
-  if (!cat){ toast("Selecione a categoria"); return; }
+  if(!amount||parseFloat(amount)<=0){toast("Informe o valor");return;}
+  if(!area){toast("Selecione o centro de custo");return;}
+  if(!cat){toast("Selecione a categoria");return;}
   dot("busy");
   try {
-    let receiptURL=null, receiptThumb=null;
-    if (receipt) {
+    let receiptURL=null,receiptThumb=null;
+    if(receipt){
       toast("Enviando foto...");
       const base64data=receipt.split(",")[1];
       const params=new URLSearchParams();
@@ -716,78 +766,77 @@ window.saveExp = async () => {
       params.append("expiration","15552000");
       const imgResp=await fetch("https://api.imgbb.com/1/upload",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:params.toString()});
       const imgData=await imgResp.json();
-      if (imgData.success){ receiptURL=imgData.data.url; receiptThumb=imgData.data.thumb?imgData.data.thumb.url:imgData.data.url; }
-      else { toast("Erro na foto, salvando sem comprovante..."); await new Promise(r=>setTimeout(r,2000)); }
+      if(imgData.success){receiptURL=imgData.data.url;receiptThumb=imgData.data.thumb?imgData.data.thumb.url:imgData.data.url;}
+      else{toast("Erro na foto, salvando sem comprovante...");await new Promise(r=>setTimeout(r,2000));}
     }
-    const colName = isCorpMode ? "expenses" : "expenses_personal";
+    const colName = currentUserData.mode==='corp' ? "expenses" : "expenses_personal";
     const expData = {
-      date: document.getElementById("f-date").value,
-      time: document.getElementById("f-time").value,
-      amount: parseFloat(amount),
-      installments: inst?inst.dataset.v:"1",
-      area, user, category: cat.dataset.v,
-      desc: document.getElementById("f-desc").value.trim(),
-      receipt: receiptURL, receiptThumb,
-      createdAt: new Date().toISOString()
+      date:document.getElementById("f-date").value,
+      time:document.getElementById("f-time").value,
+      amount:parseFloat(amount),
+      installments:inst?inst.dataset.v:"1",
+      area,category:cat.dataset.v,
+      desc:document.getElementById("f-desc").value.trim(),
+      receipt:receiptURL,receiptThumb,
+      user:currentUserData.name,
+      userId:currentUserData.id,
+      status:"pending",
+      createdAt:new Date().toISOString()
     };
-    if (!isCorpMode) expData.uid = currentUser.uid;
-    await addDoc(collection(db, colName), expData);
+    if(currentUserData.mode==='google') expData.uid=currentUserData.id;
+    await addDoc(collection(db,colName),expData);
     toast("Lancamento salvo!");
-    setTimeout(() => { initForm(); goTo("home",document.getElementById("nb-home")); }, 800);
-  } catch(err) { toast("Erro: "+err.message.slice(0,60)); dot(""); }
+    setTimeout(()=>{initForm();goTo("home",document.getElementById("nb-home"));},800);
+  } catch(err){toast("Erro: "+err.message.slice(0,60));dot("");}
 };
 
 window.openDetail = id => {
-  const e=expenses.find(x=>x.id===id); if (!e) return;
-  const inst=e.installments==="1"?"A vista":e.installments+"x";
-  let html='<p class="modal-title">'+e.merchant+'</p>'
+  const e=expenses.find(x=>x.id===id);if(!e)return;
+  const inst=e.installments==="1"?"A vista":(e.installments||"1")+"x";
+  let html='<p class="modal-title">'+fBRL(e.amount)+'</p>'
     +'<p class="modal-sub">'+fDate(e.date)+(e.time?" as "+e.time:"")+" &middot; "+e.category+'</p>'
-    +'<p class="det-amt">'+fBRL(e.amount)+'</p>'
+    +'<div style="margin-bottom:16px">'+statusBadge(e.status||"pending")+'</div>'
     +'<div class="det-row"><span class="k">Centro de custo</span><span class="v">'+e.area+'</span></div>'
-    +'<div class="det-row"><span class="k">Responsavel</span><span class="v">'+(e.user||"--")+'</span></div>'
     +'<div class="det-row"><span class="k">Categoria</span><span class="v">'+e.category+'</span></div>'
     +'<div class="det-row"><span class="k">Parcelas</span><span class="v">'+inst+'</span></div>';
-  if (e.desc) html+='<div class="det-row"><span class="k">Descricao</span><span class="v">'+e.desc+'</span></div>';
-  if (e.receipt) html+='<a href="'+e.receipt+'" target="_blank" style="display:block;margin-top:12px">'
-    +'<img class="modal-img" src="'+(e.receiptThumb||e.receipt)+'" alt="Comprovante" style="cursor:pointer">'
-    +'<p style="font-size:11px;color:var(--accent);text-align:center;margin-top:6px">&#128279; Abrir comprovante em tamanho original</p></a>';
-  html+='<button class="btn-d" data-id="'+e.id+'" onclick="delExp(this.dataset.id)">Excluir lancamento</button>';
+  if(e.desc) html+='<div class="det-row"><span class="k">Descricao</span><span class="v">'+e.desc+'</span></div>';
+  if(e.status==="rejected"&&e.rejectReason) html+='<div class="det-row" style="color:var(--danger)"><span class="k">Motivo</span><span class="v">'+e.rejectReason+'</span></div>';
+  if(e.receipt) html+='<a href="'+e.receipt+'" target="_blank" style="display:block;margin-top:12px"><img class="modal-img" src="'+(e.receiptThumb||e.receipt)+'" alt="Comprovante"><p style="font-size:11px;color:var(--accent);text-align:center;margin-top:6px">&#128279; Abrir comprovante</p></a>';
+  if(!e.status||e.status==="pending") html+='<button class="btn-d" data-id="'+e.id+'" onclick="delExp(this.dataset.id)">Excluir lancamento</button>';
   document.getElementById("modal-body").innerHTML=html;
   document.getElementById("modal-ov").classList.add("open");
 };
 
-window.closeModal = ev => { if (ev.target===document.getElementById("modal-ov")) document.getElementById("modal-ov").classList.remove("open"); };
+window.closeModal=ev=>{if(ev.target===document.getElementById("modal-ov"))document.getElementById("modal-ov").classList.remove("open");};
 
-window.delExp = async id => {
-  if (!confirm("Excluir este lancamento?")) return;
+window.delExp=async id=>{
+  if(!confirm("Excluir este lancamento?"))return;
   dot("busy");
-  try {
-    const colName = isCorpMode ? "expenses" : "expenses_personal";
-    await deleteDoc(doc(db, colName, id));
-    document.getElementById("modal-ov").classList.remove("open");
-    toast("Lancamento removido");
-  } catch(err) { toast("Erro: "+err.message); dot(""); }
+  const colName=currentUserData.mode==='corp'?"expenses":"expenses_personal";
+  await deleteDoc(doc(db,colName,id));
+  document.getElementById("modal-ov").classList.remove("open");
+  toast("Lancamento removido");
 };
 
-window.doExport = () => {
-  const header="Data,Horario,Responsavel,Valor,Parcelas,Centro de Custo,Categoria,Descricao,Comprovante";
-  const rows=expenses.map(e => {
-    const rc=e.receipt?(e.receipt.startsWith("http")?e.receipt:"(foto salva no app)"):"";
-    return [e.date,e.time||"",e.user||"",e.amount,e.installments,e.area,e.category,'"'+(e.desc||"").replace(/"/g,'""')+'"',rc].join(",");
+window.doExport=()=>{
+  const h="Data,Horario,Usuario,Valor,Parcelas,Centro de Custo,Categoria,Status,Descricao,Comprovante";
+  const rows=expenses.map(e=>{
+    const rc=e.receipt?(e.receipt.startsWith("http")?e.receipt:"(foto no app)"):"";
+    return [e.date,e.time||"",e.user||"",e.amount,e.installments||"1",e.area||"",e.category||"",e.status||"pending",'"'+(e.desc||"").replace(/"/g,'""')+'"',rc].join(",");
   });
-  const b=new Blob([header+"\n"+rows.join("\n")],{type:"text/csv;charset=utf-8;"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="gastos-sos360.csv"; a.click();
+  const b=new Blob([h+"\n"+rows.join("\n")],{type:"text/csv;charset=utf-8;"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="meus-gastos-sos360.csv";a.click();
   toast("CSV exportado");
 };
 
-window.toggleTheme = isLight => {
+window.toggleTheme=isLight=>{
   document.body.classList.toggle("light",isLight);
   localStorage.setItem("theme",isLight?"light":"dark");
   document.getElementById("theme-label").textContent=isLight?"Tema claro":"Tema escuro";
 };
 
-function toast(msg) {
-  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+function toast(msg){
+  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
   setTimeout(()=>t.classList.remove("show"),2800);
 }
 </script>
