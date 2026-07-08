@@ -675,18 +675,24 @@ window.openAddUser = () => {
 
 window.saveUser = async () => {
   const name = document.getElementById("u-name").value.trim();
-  const pin = String(document.getElementById("u-pin").value.trim());
+  const pinRaw = document.getElementById("u-pin").value.trim();
+  const pin = String(pinRaw);
   const role = document.getElementById("u-role").value;
   if (!name) { toast("Informe o nome do usuario"); return; }
-  if (!pin || pin.length !== 4 || isNaN(pin)) { toast("PIN deve ter exatamente 4 digitos"); return; }
+  if (!pin || pin.length !== 4 || !/^[0-9]{4}$/.test(pin)) { toast("PIN deve ter exatamente 4 digitos numericos"); return; }
   try {
-    console.log("[SAVE USER] Saving:", name, pin, role);
     // Check if PIN already exists
     const snap = await getDocs(collection(db,"admin_users"));
-    console.log("[SAVE USER] Existing users:", snap.size);
     let pinExists = false;
-    snap.forEach(d => { if (String(d.data().pin) === String(pin)) pinExists = true; });
-    if (pinExists) { toast("Este PIN ja esta em uso. Escolha outro."); return; }
+    let pinOwner = "";
+    snap.forEach(d => {
+      const stored = String(d.data().pin).trim();
+      if (stored === pin) { pinExists = true; pinOwner = d.data().name; }
+    });
+    if (pinExists) {
+      toast("PIN " + pin + " ja esta em uso por " + pinOwner + ". Escolha outro.");
+      return;
+    }
     const docRef = await addDoc(collection(db,"admin_users"), {
       name, pin, role,
       blocked: false,
@@ -694,10 +700,9 @@ window.saveUser = async () => {
       createdAt: new Date().toISOString(),
       createdBy: currentUser.email
     });
-    console.log("[SAVE USER] Saved with ID:", docRef.id);
-    toast("Usuario adicionado! PIN: " + pin);
+    toast("Usuario " + name + " adicionado! PIN inicial: " + pin);
     closeModal("modal-user");
-    await loadUsers(); // Refresh list
+    await window.loadUsers();
   } catch(err) {
     console.error("[SAVE USER] Error:", err);
     toast("Erro ao salvar: " + err.message);
