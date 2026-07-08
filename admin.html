@@ -672,20 +672,28 @@ window.saveUser = async () => {
   const role = document.getElementById("u-role").value;
   if (!name) { toast("Informe o nome do usuario"); return; }
   if (!pin || pin.length !== 4 || isNaN(pin)) { toast("PIN deve ter exatamente 4 digitos"); return; }
-  // Check if PIN already exists
-  const snap = await getDocs(collection(db,"admin_users"));
-  let pinExists = false;
-  snap.forEach(d => { if (String(d.data().pin) === String(pin)) pinExists = true; });
-  if (pinExists) { toast("Este PIN ja esta em uso. Escolha outro."); return; }
-  await addDoc(collection(db,"admin_users"), {
-    name, pin, role,
-    blocked: false,
-    mustChangePin: true,
-    createdAt: new Date().toISOString(),
-    createdBy: currentUser.email
-  });
-  toast("Usuario adicionado! PIN: " + pin);
-  closeModal("modal-user");
+  try {
+    console.log("[SAVE USER] Saving:", name, pin, role);
+    // Check if PIN already exists
+    const snap = await getDocs(collection(db,"admin_users"));
+    console.log("[SAVE USER] Existing users:", snap.size);
+    let pinExists = false;
+    snap.forEach(d => { if (String(d.data().pin) === String(pin)) pinExists = true; });
+    if (pinExists) { toast("Este PIN ja esta em uso. Escolha outro."); return; }
+    const docRef = await addDoc(collection(db,"admin_users"), {
+      name, pin, role,
+      blocked: false,
+      mustChangePin: true,
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser.email
+    });
+    console.log("[SAVE USER] Saved with ID:", docRef.id);
+    toast("Usuario adicionado! PIN: " + pin);
+    closeModal("modal-user");
+  } catch(err) {
+    console.error("[SAVE USER] Error:", err);
+    toast("Erro ao salvar: " + err.message);
+  }
 };
 
 window.toggleBlock = async (id, isBlocked) => {
