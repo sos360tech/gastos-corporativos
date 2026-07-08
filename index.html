@@ -644,14 +644,15 @@ function subscribeExpenses() {
   if (unsubExpenses) unsubExpenses();
   let q;
   if (currentUserData.mode === 'corp') {
-    // Corporate user: only their own expenses in shared collection
-    q = query(collection(db,"expenses"), where("userId","==",currentUserData.id), orderBy("createdAt","desc"));
+    // Corporate user: only their own expenses
+    q = query(collection(db,"expenses"), where("userId","==",currentUserData.id));
   } else {
     // Google user: personal collection
-    q = query(collection(db,"expenses_personal"), where("uid","==",currentUserData.id), orderBy("createdAt","desc"));
+    q = query(collection(db,"expenses_personal"), where("uid","==",currentUserData.id));
   }
   unsubExpenses = onSnapshot(q, snap => {
-    expenses = snap.docs.map(d => ({...d.data(), id:d.id}));
+    expenses = snap.docs.map(d => ({...d.data(), id:d.id}))
+      .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
     dot("ok");
     renderHome();
     renderHist();
