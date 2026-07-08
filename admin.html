@@ -411,11 +411,13 @@ function initApp() {
     updateUserFilters();
   }
 
+  // Corporate expenses (all users with PIN)
   onSnapshot(query(collection(db,"expenses"), orderBy("createdAt","desc")), snap => {
     corpExpenses = snap.docs.map(d => ({...d.data(), id:d.id, mode:"corp"}));
     mergeAndRender();
   });
 
+  // Personal expenses (Google login users)
   onSnapshot(query(collection(db,"expenses_personal"), orderBy("createdAt","desc")), snap => {
     personalExpenses = snap.docs.map(d => ({...d.data(), id:d.id, mode:"personal"}));
     mergeAndRender();
