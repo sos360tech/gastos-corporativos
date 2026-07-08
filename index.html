@@ -549,6 +549,26 @@ async function checkPin() {
     if (btn) { btn.textContent = "✓"; btn.style.opacity = "1"; btn.style.pointerEvents = "auto"; }
   }
 }
+window.newPinPress = d => {
+  if (newPinValue.length >= 4) return;
+  newPinValue += d;
+  window.updatePinDots("new-pin-dots", newPinValue.length);
+  const btn = document.getElementById("new-pin-confirm-btn");
+  if (btn) {
+    if (newPinValue.length === 4) { btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
+    else { btn.style.opacity=".4"; btn.style.pointerEvents="none"; }
+  }
+};
+window.newPinDel = () => {
+  newPinValue = newPinValue.slice(0,-1);
+  window.updatePinDots("new-pin-dots", newPinValue.length);
+  const btn = document.getElementById("new-pin-confirm-btn");
+  if (btn) { btn.style.opacity=".4"; btn.style.pointerEvents="none"; }
+};
+window.confirmNewPin = () => {
+  if (newPinValue.length === 4) handleNewPin();
+};
+
 async function handleNewPin() {
   if (changePinStep === 0) {
     newPinTemp = newPinValue;
