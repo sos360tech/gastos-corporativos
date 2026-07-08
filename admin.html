@@ -668,14 +668,14 @@ window.openAddUser = () => {
 
 window.saveUser = async () => {
   const name = document.getElementById("u-name").value.trim();
-  const pin = document.getElementById("u-pin").value.trim();
+  const pin = String(document.getElementById("u-pin").value.trim());
   const role = document.getElementById("u-role").value;
   if (!name) { toast("Informe o nome do usuario"); return; }
   if (!pin || pin.length !== 4 || isNaN(pin)) { toast("PIN deve ter exatamente 4 digitos"); return; }
   // Check if PIN already exists
   const snap = await getDocs(collection(db,"admin_users"));
   let pinExists = false;
-  snap.forEach(d => { if (d.data().pin === pin) pinExists = true; });
+  snap.forEach(d => { if (String(d.data().pin) === String(pin)) pinExists = true; });
   if (pinExists) { toast("Este PIN ja esta em uso. Escolha outro."); return; }
   await addDoc(collection(db,"admin_users"), {
     name, pin, role,
