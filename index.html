@@ -509,7 +509,8 @@ async function checkPin() {
   let found = null;
   snap.forEach(d => {
     const u = d.data();
-    if (u.pin === pinValue && !u.blocked) found = {...u, id: d.id};
+    // Compare as string and number to handle both formats
+    if ((String(u.pin) === String(pinValue)) && !u.blocked) found = {...u, id: d.id};
   });
   if (found) {
     pinValue = "";
