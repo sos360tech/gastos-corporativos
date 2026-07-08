@@ -427,16 +427,18 @@ function initApp() {
     mergeAndRender();
   });
 
-  // Listen to users
-  onSnapshot(collection(db,"admin_users"), snap => {
-    console.log("[ADMIN] Users snapshot:", snap.size, "docs");
-    allUsers = snap.docs.map(d => {
-      const data = d.data();
-      console.log("[ADMIN] User doc:", data.name, "pin type:", typeof data.pin, "pin:", data.pin);
-      return {...data, id:d.id};
-    });
-    renderUsers();
-  });
+  // Load users
+  window.loadUsers = async function() {
+    try {
+      const snap = await getDocs(collection(db,"admin_users"));
+      console.log("[ADMIN] Users loaded:", snap.size);
+      allUsers = snap.docs.map(d => ({...d.data(), id:d.id}));
+      renderUsers();
+    } catch(err) {
+      console.error("[ADMIN] Error loading users:", err);
+    }
+  }
+  window.loadUsers();
 }
 
 // ---- NAVIGATION ----
@@ -695,6 +697,7 @@ window.saveUser = async () => {
     console.log("[SAVE USER] Saved with ID:", docRef.id);
     toast("Usuario adicionado! PIN: " + pin);
     closeModal("modal-user");
+    await loadUsers(); // Refresh list
   } catch(err) {
     console.error("[SAVE USER] Error:", err);
     toast("Erro ao salvar: " + err.message);
@@ -704,12 +707,14 @@ window.saveUser = async () => {
 window.toggleBlock = async (id, isBlocked) => {
   await updateDoc(doc(db,"admin_users",id), {blocked:!isBlocked});
   toast(isBlocked?"Usuario desbloqueado!":"Usuario bloqueado!");
+  loadUsers();
 };
 
 window.removeUser = async id => {
   if (!confirm("Remover este usuario?")) return;
   await deleteDoc(doc(db,"admin_users",id));
   toast("Usuario removido!");
+  loadUsers();
 };
 
 // ---- TOAST ----
