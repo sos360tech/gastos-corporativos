@@ -216,7 +216,7 @@
         <div class="field"><label>Data *</label><input type="date" id="f-date"></div>
         <div class="field"><label>Horario</label><input type="time" id="f-time"></div>
       </div>
-      <div class="field"><label>Estabelecimento *</label><input type="text" id="f-merchant" placeholder="Ex: Posto Shell, Amazon..." maxlength="80"></div>
+
       <div class="field">
         <label>Valor *</label>
         <div class="amt-wrap">
@@ -253,21 +253,7 @@
         </select>
       </div>
     </div>
-    <div class="fsec">
-      <p class="fsec-title">Responsavel *</p>
-      <div class="field">
-        <select id="f-user">
-          <option value="">Selecione o responsavel...</option>
-          <option>FELIPE</option>
-          <option>MARCOS</option>
-          <option>LEANDRO</option>
-          <option>NATHALIA</option>
-          <option>PAULO JUNIOR</option>
-          <option>RODRIGO</option>
-          <option>VANESSA</option>
-        </select>
-      </div>
-    </div>
+
     <div class="fsec">
       <p class="fsec-title">Categoria *</p>
       <div class="chips" id="f-cat">
@@ -641,8 +627,8 @@ function emptyHTML(ico,txt) {
 function eRow(e) {
   return '<div class="exp-item" data-id="'+e.id+'" onclick="openDetail(this.dataset.id)">'
     +'<div class="exp-icon">&#128179;</div>'
-    +'<div class="exp-info"><p class="exp-merchant">'+e.merchant+'</p>'
-    +'<p class="exp-meta">'+fDate(e.date)+' &middot; '+e.area+(e.user ? ' &middot; '+e.user : '')+'</p></div>'
+    +'<div class="exp-info"><p class="exp-merchant">'+(e.user||'--')+'</p>'
+    +'<p class="exp-meta">'+fDate(e.date)+' &middot; '+e.area+'</p></div>'
     +'<span class="exp-amount">'+fBRL(e.amount)+'</span></div>';
 }
 
@@ -656,9 +642,8 @@ document.querySelectorAll("#frow .fchip").forEach(c => {
 function initForm() {
   document.getElementById("f-date").value = new Date().toISOString().split("T")[0];
   document.getElementById("f-time").value = new Date().toTimeString().slice(0,5);
-  ["f-merchant","f-amount","f-desc"].forEach(id => document.getElementById(id).value="");
+  ["f-amount","f-desc"].forEach(id => document.getElementById(id).value="");
   document.getElementById("f-area").value="";
-  document.getElementById("f-user").value="";
   receipt=null;
   document.getElementById("f-prev-wrap").style.display="none";
   document.getElementById("f-zone").classList.remove("has-file");
@@ -711,16 +696,13 @@ window.rmFile = () => {
 };
 
 window.saveExp = async () => {
-  const merchant=document.getElementById("f-merchant").value.trim();
   const amount=document.getElementById("f-amount").value;
   const area=document.getElementById("f-area").value;
   const cat=document.querySelector("#f-cat .chip.active");
   const inst=document.querySelector("#f-inst .chip.active");
-  const user=document.getElementById("f-user").value;
-  if (!merchant){ toast("Informe o estabelecimento"); return; }
+  const user = isCorpMode ? "Corporativo" : (currentUser?.displayName || currentUser?.email || "Usuario");
   if (!amount||parseFloat(amount)<=0){ toast("Informe o valor"); return; }
   if (!area){ toast("Selecione o centro de custo"); return; }
-  if (!user){ toast("Selecione o responsavel"); return; }
   if (!cat){ toast("Selecione a categoria"); return; }
   dot("busy");
   try {
@@ -741,7 +723,7 @@ window.saveExp = async () => {
     const expData = {
       date: document.getElementById("f-date").value,
       time: document.getElementById("f-time").value,
-      merchant, amount: parseFloat(amount),
+      amount: parseFloat(amount),
       installments: inst?inst.dataset.v:"1",
       area, user, category: cat.dataset.v,
       desc: document.getElementById("f-desc").value.trim(),
@@ -788,10 +770,10 @@ window.delExp = async id => {
 };
 
 window.doExport = () => {
-  const header="Data,Horario,Responsavel,Estabelecimento,Valor,Parcelas,Centro de Custo,Categoria,Descricao,Comprovante";
+  const header="Data,Horario,Responsavel,Valor,Parcelas,Centro de Custo,Categoria,Descricao,Comprovante";
   const rows=expenses.map(e => {
     const rc=e.receipt?(e.receipt.startsWith("http")?e.receipt:"(foto salva no app)"):"";
-    return [e.date,e.time||"",e.user||"",'"'+e.merchant+'"',e.amount,e.installments,e.area,e.category,'"'+(e.desc||"").replace(/"/g,'""')+'"',rc].join(",");
+    return [e.date,e.time||"",e.user||"",e.amount,e.installments,e.area,e.category,'"'+(e.desc||"").replace(/"/g,'""')+'"',rc].join(",");
   });
   const b=new Blob([header+"\n"+rows.join("\n")],{type:"text/csv;charset=utf-8;"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="gastos-sos360.csv"; a.click();
