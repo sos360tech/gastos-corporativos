@@ -444,6 +444,13 @@ let newPinValue = "";
 const MP = ["Janeiro","Fevereiro","Marco","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const MS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
+// Global helpers needed by onclick handlers in HTML
+window.updatePinDots = function(dotsId, count) {
+  document.querySelectorAll("#"+dotsId+" .pin-dot").forEach(function(dot,i){
+    dot.classList.toggle("filled", i < count);
+  });
+};
+
 // ---- AUTH - GOOGLE ----
 onAuthStateChanged(auth, user => {
   if (user && !currentUserData) {
