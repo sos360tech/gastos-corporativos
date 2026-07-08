@@ -398,18 +398,27 @@ function initApp() {
   document.getElementById("r-from").value = ym;
   document.getElementById("r-to").value = ym;
 
-  // Listen to all expenses (corporate)
+  // Listen to both collections in real time
+  let corpExpenses = [];
+  let personalExpenses = [];
+
+  function mergeAndRender() {
+    allExpenses = [...corpExpenses, ...personalExpenses]
+      .sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
+    updateDashboard();
+    renderExpenses();
+    renderReportSummary();
+    updateUserFilters();
+  }
+
   onSnapshot(query(collection(db,"expenses"), orderBy("createdAt","desc")), snap => {
-    const corp = snap.docs.map(d => ({...d.data(), id:d.id, mode:"corp"}));
-    // Also get personal expenses
-    getDocs(query(collection(db,"expenses_personal"), orderBy("createdAt","desc"))).then(snap2 => {
-      const personal = snap2.docs.map(d => ({...d.data(), id:d.id, mode:"personal"}));
-      allExpenses = [...corp, ...personal].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
-      updateDashboard();
-      renderExpenses();
-      renderReportSummary();
-      updateUserFilters();
-    });
+    corpExpenses = snap.docs.map(d => ({...d.data(), id:d.id, mode:"corp"}));
+    mergeAndRender();
+  });
+
+  onSnapshot(query(collection(db,"expenses_personal"), orderBy("createdAt","desc")), snap => {
+    personalExpenses = snap.docs.map(d => ({...d.data(), id:d.id, mode:"personal"}));
+    mergeAndRender();
   });
 
   // Listen to users
