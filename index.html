@@ -754,7 +754,11 @@ function subscribeExpenses() {
     dot("ok");
     renderHome();
     renderHist();
-  }, () => dot(""));
+  }, err => {
+    dot("");
+    console.error("[EXPENSES] Erro ao ler lancamentos:", err.code, err.message);
+    toast("Erro ao carregar: " + (err.code || err.message));
+  });
 }
 
 window.doLogout = async () => {
