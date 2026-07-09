@@ -356,8 +356,6 @@ const provider = new GoogleAuthProvider();
 
 // Admin emails
 const ADMIN_EMAILS = ["kakocbarros@gmail.com"];
-// Empresa gerida por este painel (ate a Fase 4 trazer o superadmin multi-empresa)
-const CURRENT_COMPANY_ID = "sos360";
 
 let allExpenses = [];
 let allUsers = [];
@@ -790,7 +788,6 @@ window.saveUser = async () => {
     }
     const docRef = await addDoc(collection(db,"admin_users"), {
       name, pin, role,
-      companyId: CURRENT_COMPANY_ID,
       blocked: false,
       mustChangePin: true,
       createdAt: new Date().toISOString(),

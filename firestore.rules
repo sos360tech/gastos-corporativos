@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // PAINEL DO TIME — regras existentes, inalteradas
+    // ============================================================
+    function isAuth() {
+      return request.auth != null;
+    }
+    function profile() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
+    }
+    function isGestor() {
+      return isAuth() && profile().role == 'gestor';
+    }
+    function canManageTeam() {
+      return isAuth() && (profile().role == 'gestor' || profile().canInviteMembers == true);
+    }
+    function canWrite() {
+      return isAuth() && profile().role != 'visualizador';
+    }
+    match /profiles/{id} {
+      allow read: if isAuth() && (request.auth.uid == id || canManageTeam());
+      allow write: if isGestor() || request.auth.uid == id;
+    }
+    match /tasks/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /members/{id} { allow read: if isAuth(); allow write: if isGestor(); }
+    match /messages/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /crm_companies/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /crm_proposals/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /crm_contracts/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /crm_visits/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /contracts_v2/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /projects_v1/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /seguros_v1/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+
+    // ============================================================
+    // GASTOS CORPORATIVOS SOS360 — Fase 5: seguranca multi-empresa
+    // ============================================================
+
+    // --- Helpers de identidade ---
+
+    // Admin de empresa: reconhecido pelo e-mail do Google Auth cadastrado
+    // no documento da empresa (campo adminEmail), sem precisar de doc extra.
+    function isCompanyAdmin(companyId) {
+      return isAuth() &&
+        companyId is string &&
+        exists(/databases/$(database)/documents/companies/$(companyId)) &&
+        get(/databases/$(database)/documents/companies/$(companyId)).data.adminEmail == request.auth.token.email;
+    }
+
+    // Usuario PIN: identidade anonima vinculada via auth_map/{uid} -> { adminUserId, companyId }
+    function linkedProfile() {
+      return get(/databases/$(database)/documents/auth_map/$(request.auth.uid)).data;
+    }
+    function isLinked() {
+      return isAuth() && exists(/databases/$(database)/documents/auth_map/$(request.auth.uid));
+    }
+    function isLinkedTo(companyId) {
+      return isLinked() && linkedProfile().companyId == companyId;
+    }
+    function isLinkedToDoc(adminUserId) {
+      return isLinked() && linkedProfile().adminUserId == adminUserId;
+    }
+    function isCompanyMember(companyId) {
+      return isCompanyAdmin(companyId) || isLinkedTo(companyId);
+    }
+
+    // --- companies: cadastro das empresas (gerido hoje via ferramenta de migracao/admin) ---
+    match /companies/{companyId} {
+      allow read: if isCompanyAdmin(companyId);
+      allow write: if false; // criacao/edicao feita via ferramenta administrativa dedicada (Fase 4)
+    }
+
+    // --- auth_map: liga uma sessao autenticada (anonima ou nao) a um registro em admin_users ---
+    match /auth_map/{uid} {
+      allow read: if isAuth() && request.auth.uid == uid;
+      allow create, update: if isAuth() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['adminUserId','companyId','linkedAt'])
+        && exists(/databases/$(database)/documents/admin_users/$(request.resource.data.adminUserId))
+        && get(/databases/$(database)/documents/admin_users/$(request.resource.data.adminUserId)).data.companyId == request.resource.data.companyId;
+      allow delete: if false;
+    }
+
+    // --- admin_users: cadastro de PIN/perfil dos usuarios de cada empresa ---
+    match /admin_users/{id} {
+      // Leitura precisa continuar aberta a qualquer sessao autenticada (mesmo anonima),
+      // pois a comparacao do PIN acontece no app do usuario (sem Cloud Functions).
+      // Isso impede acesso de quem nao passa nem pelo login anonimo, mas nao impede
+      // um usuario ja autenticado de ler PINs da propria base.
+      allow read: if isAuth();
+
+      allow create: if isCompanyAdmin(request.resource.data.companyId);
+
+      allow update: if isCompanyAdmin(resource.data.companyId)
+        // usuario dono do registro pode trocar o proprio PIN
+        || (isLinkedToDoc(id) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pin','mustChangePin']))
+        // primeiro vinculo (ou re-vinculo) da sessao anonima ao registro, apos validar o PIN
+        || (isAuth() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['authUid'])
+            && request.resource.data.authUid == request.auth.uid);
+
+      allow delete: if isCompanyAdmin(resource.data.companyId);
+    }
+
+    // --- expenses: lancamentos corporativos (login por PIN) ---
+    match /expenses/{id} {
+      allow read: if isCompanyMember(resource.data.companyId);
+
+      allow create: if isLinkedTo(request.resource.data.companyId)
+        && request.resource.data.userId == linkedProfile().adminUserId;
+
+      allow update, delete: if isCompanyAdmin(resource.data.companyId)
+        || (isLinkedTo(resource.data.companyId)
+            && resource.data.userId == linkedProfile().adminUserId
+            && (!('status' in resource.data) || resource.data.status == 'pending'));
+    }
+
+    // --- expenses_personal: lancamentos do login Google (uso pessoal) ---
+    match /expenses_personal/{id} {
+      allow read: if isAuth() && resource.data.uid == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuth() && resource.data.uid == request.auth.uid
+        && (!('status' in resource.data) || resource.data.status == 'pending');
+    }
+  }
+}

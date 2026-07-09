@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SOS360 - Migracao Fase 1 (Multi-Empresa)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#F7F5FC;--bg2:#FFFFFF;--border:rgba(76,29,149,.12);--text:#1E1832;--text2:#6E6584;--accent:#7C3AED;--danger:#EF4444;--success:#10B981;--warning:#F59E0B;--radius:14px;--font:'Sora',sans-serif;--mono:'DM Mono',monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding:32px 16px}
+  .wrap{max-width:640px;margin:0 auto}
+  .banner{background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;border-radius:var(--radius);padding:14px 16px;font-size:13px;margin-bottom:24px;line-height:1.5}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;box-shadow:0 4px 20px rgba(76,29,149,.06)}
+  h1{font-size:20px;font-weight:700;margin-bottom:4px}
+  .sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+  h2{font-size:15px;font-weight:600;margin-bottom:8px}
+  p.desc{font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5}
+  .btn{width:100%;padding:13px;border:none;border-radius:10px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
+  .btn:active{opacity:.85}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-google{background:var(--bg2);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px}
+  .log{background:#141022;color:#D9D3E8;font-family:var(--mono);font-size:12px;border-radius:10px;padding:14px;margin-top:14px;max-height:280px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;display:none}
+  .log.show{display:block}
+  .log .ok{color:#34D399}
+  .log .skip{color:#9C93B5}
+  .log .err{color:#F87171}
+  .status{font-size:13px;padding:10px 14px;border-radius:10px;margin-top:12px;display:none}
+  .status.show{display:block}
+  .status.ok{background:rgba(16,185,129,.1);color:#0D9467}
+  .status.err{background:rgba(239,68,68,.1);color:#DC2626}
+  #sc-login{display:none}
+  #sc-tool{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="banner">
+    ⚠️ <b>Ferramenta de uso unico.</b> Serve apenas para preparar a base de dados da SOS360 para o modelo multi-empresa (Fase 1). Depois de rodar com sucesso, este arquivo pode ser apagado — ele nao faz parte do app publicado.
+  </div>
+
+  <div id="sc-login" class="card">
+    <h1>Migracao Fase 1</h1>
+    <p class="sub">Entre com a conta de administrador para continuar.</p>
+    <button class="btn btn-google" onclick="doLogin()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Entrar com Google
+    </button>
+    <p id="login-error" style="color:var(--danger);font-size:12px;margin-top:14px;display:none"></p>
+  </div>
+
+  <div id="sc-tool">
+    <div class="card">
+      <h1>Migracao Fase 1 — Multi-Empresa</h1>
+      <p class="sub">Logado como <b id="admin-email">-</b></p>
+    </div>
+
+    <div class="card">
+      <h2>1. Criar empresa SOS360</h2>
+      <p class="desc">Cria (ou confirma) o documento <code>companies/sos360</code> com os dados basicos da empresa. Pode rodar quantas vezes quiser — se ja existir, so mostra os dados atuais e nao sobrescreve.</p>
+      <button class="btn btn-primary" id="btn-create-company" onclick="createCompany()">Criar / verificar empresa SOS360</button>
+      <div class="status" id="status-company"></div>
+    </div>
+
+    <div class="card">
+      <h2>2. Migrar lancamentos e usuarios</h2>
+      <p class="desc">Adiciona <code>companyId: "sos360"</code> em todos os documentos de <code>expenses</code>, <code>expenses_personal</code> e <code>admin_users</code> que ainda nao tem esse campo. Documentos ja migrados sao pulados automaticamente — pode rodar mais de uma vez sem risco.</p>
+      <button class="btn btn-primary" id="btn-migrate" onclick="runMigration()" disabled>Rodar migracao</button>
+      <div class="status" id="status-migration"></div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyDdFODD9c1PHLKoVV0MqLmqSq2-A43xIDw",
+  authDomain: "sos360-gastos.firebaseapp.com",
+  projectId: "sos360-gastos",
+  storageBucket: "sos360-gastos.firebasestorage.app",
+  messagingSenderId: "269701265611",
+  appId: "1:269701265611:web:71756f24407ba9003d434e"
+});
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+// Mesma lista de administradores autorizados usada no admin.html
+const ADMIN_EMAILS = ["kakocbarros@gmail.com"];
+const COMPANY_ID = "sos360";
+let companyCreated = false;
+
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    if (!ADMIN_EMAILS.includes(user.email)) {
+      document.getElementById("login-error").textContent = "Acesso negado. Apenas administradores podem usar esta ferramenta.";
+      document.getElementById("login-error").style.display = "block";
+      return;
+    }
+    document.getElementById("sc-login").style.display = "none";
+    document.getElementById("sc-tool").style.display = "block";
+    document.getElementById("admin-email").textContent = user.email;
+    // Verifica se a empresa ja existe, para liberar o botao de migracao direto
+    const snap = await getDoc(doc(db, "companies", COMPANY_ID));
+    if (snap.exists()) {
+      companyCreated = true;
+      document.getElementById("btn-migrate").disabled = false;
+      showStatus("status-company", "ok", "Empresa ja existe: " + JSON.stringify(snap.data()));
+    }
+  } else {
+    document.getElementById("sc-login").style.display = "block";
+    document.getElementById("sc-tool").style.display = "none";
+  }
+});
+
+window.doLogin = async () => {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    document.getElementById("login-error").textContent = "Erro no login: " + e.message;
+    document.getElementById("login-error").style.display = "block";
+  }
+};
+
+function showStatus(elId, kind, msg) {
+  const el = document.getElementById(elId);
+  el.className = "status show " + kind;
+  el.textContent = msg;
+}
+
+function log(msg, kind) {
+  const el = document.getElementById("log");
+  el.classList.add("show");
+  const span = document.createElement("div");
+  if (kind) span.className = kind;
+  span.textContent = msg;
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+}
+
+window.createCompany = async () => {
+  const btn = document.getElementById("btn-create-company");
+  btn.disabled = true;
+  btn.textContent = "Verificando...";
+  try {
+    const ref = doc(db, "companies", COMPANY_ID);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      showStatus("status-company", "ok", "Empresa ja existia: " + JSON.stringify(snap.data()));
+    } else {
+      const data = {
+        name: "SOS360",
+        plan: "basic",
+        adminEmail: "kakocbarros@gmail.com",
+        maxUsers: 50,
+        active: true,
+        createdAt: new Date().toISOString()
+      };
+      await setDoc(ref, data);
+      showStatus("status-company", "ok", "Empresa criada com sucesso: " + JSON.stringify(data));
+    }
+    companyCreated = true;
+    document.getElementById("btn-migrate").disabled = false;
+  } catch(err) {
+    showStatus("status-company", "err", "Erro: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Criar / verificar empresa SOS360";
+  }
+};
+
+async function migrateCollection(colName) {
+  const snap = await getDocs(collection(db, colName));
+  let migrated = 0, skipped = 0, errors = 0;
+  log("--- " + colName + " (" + snap.size + " documentos) ---");
+  for (const d of snap.docs) {
+    const data = d.data();
+    if (data.companyId) {
+      skipped++;
+      continue;
+    }
+    try {
+      await updateDoc(doc(db, colName, d.id), { companyId: COMPANY_ID });
+      migrated++;
+      log("  OK  " + d.id, "ok");
+    } catch(err) {
+      errors++;
+      log("  ERRO " + d.id + ": " + err.message, "err");
+    }
+  }
+  log(colName + ": " + migrated + " migrados, " + skipped + " ja tinham companyId, " + errors + " erros.", skipped===snap.size ? "skip" : "ok");
+  return { migrated, skipped, errors };
+}
+
+window.runMigration = async () => {
+  if (!companyCreated) { alert("Crie a empresa primeiro (passo 1)."); return; }
+  if (!confirm("Confirma rodar a migracao? Isso vai adicionar companyId nos documentos que ainda nao tem.")) return;
+  const btn = document.getElementById("btn-migrate");
+  btn.disabled = true;
+  btn.textContent = "Migrando...";
+  document.getElementById("log").innerHTML = "";
+  let totalMigrated = 0, totalSkipped = 0, totalErrors = 0;
+  try {
+    for (const col of ["expenses", "expenses_personal", "admin_users"]) {
+      const r = await migrateCollection(col);
+      totalMigrated += r.migrated;
+      totalSkipped += r.skipped;
+      totalErrors += r.errors;
+    }
+    log("=== CONCLUIDO: " + totalMigrated + " migrados, " + totalSkipped + " ja migrados, " + totalErrors + " erros ===");
+    if (totalErrors === 0) {
+      showStatus("status-migration", "ok", "Migracao concluida! " + totalMigrated + " documentos atualizados.");
+    } else {
+      showStatus("status-migration", "err", totalErrors + " erro(s) durante a migracao. Veja o log abaixo.");
+    }
+  } catch(err) {
+    showStatus("status-migration", "err", "Erro geral: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Rodar migracao";
+  }
+};
+</script>
+</body>
+</html>
