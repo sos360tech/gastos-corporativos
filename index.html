@@ -505,7 +505,15 @@ window.updatePinDots = function(dotsId, count) {
 };
 
 // ---- AUTH - GOOGLE ----
+let authReadyResolve;
+const authReady = new Promise(res => { authReadyResolve = res; });
+let authInitialized = false;
+
 onAuthStateChanged(auth, user => {
+  if (!authInitialized) {
+    authInitialized = true;
+    authReadyResolve(user);
+  }
   if (user && !user.isAnonymous && !currentUserData) {
     currentUserData = {id: user.uid, name: user.displayName||user.email, mode:'google', email: user.email};
     enterApp();
@@ -520,13 +528,17 @@ window.loginGoogle = async () => {
 };
 
 // ---- AUTH - ANONIMA (necessaria para as regras de seguranca do PIN) ----
-// Garante que exista uma sessao autenticada (mesmo anonima) antes de qualquer
-// leitura/escrita em admin_users/expenses via login por PIN.
+// Garante que exista UMA UNICA sessao autenticada (mesmo anonima), evitando
+// que duas chamadas concorrentes criem duas identidades anonimas diferentes
+// na mesma sessao (o que quebraria o vinculo auth_map criado no login).
+let anonAuthPromise = null;
 async function ensureAuth() {
-  if (!auth.currentUser) {
-    await signInAnonymously(auth);
+  await authReady; // espera o Firebase confirmar se ja existe sessao restaurada
+  if (auth.currentUser) return auth.currentUser;
+  if (!anonAuthPromise) {
+    anonAuthPromise = signInAnonymously(auth).then(cred => cred.user);
   }
-  return auth.currentUser;
+  return anonAuthPromise;
 }
 // Dispara logo no carregamento da pagina, sem esperar o usuario interagir.
 ensureAuth().catch(err => console.error("[AUTH] Falha no login anonimo:", err));
