@@ -285,10 +285,16 @@
   <div class="modal">
     <p class="modal-title">Detalhe do Lancamento</p>
     <div id="modal-expense-body"></div>
-    <div class="modal-footer">
+    <div class="modal-footer" id="modal-expense-footer-view">
       <button class="btn btn-outline" onclick="closeModal('modal-expense')">Fechar</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmDeleteExpense()">&#128465; Excluir</button>
+      <button class="btn btn-outline btn-sm" onclick="enableEditExpense()">&#9998; Editar</button>
       <button class="btn btn-danger btn-sm" id="btn-reject" onclick="updateStatus('rejected')">&#10007; Reprovar</button>
       <button class="btn btn-success btn-sm" id="btn-approve" onclick="updateStatus('approved')">&#10003; Aprovar</button>
+    </div>
+    <div class="modal-footer" id="modal-expense-footer-edit" style="display:none">
+      <button class="btn btn-outline" onclick="cancelEditExpense()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditExpense()">Salvar alteracoes</button>
     </div>
   </div>
 </div>
@@ -555,6 +561,8 @@ window.openExpense = (id, mode) => {
   currentExpenseId = {id, mode};
   const e = allExpenses.find(x => x.id===id);
   if (!e) return;
+  document.getElementById("modal-expense-footer-view").style.display = "flex";
+  document.getElementById("modal-expense-footer-edit").style.display = "none";
   const inst = e.installments==="1"?"A vista":(e.installments||"1")+"x";
   let html = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
@@ -601,6 +609,91 @@ window.confirmReject = async () => {
   toast("Lancamento reprovado!");
   closeModal("modal-reject");
   closeModal("modal-expense");
+};
+
+// ---- EDIT / DELETE EXPENSE ----
+const AREAS_LIST = ["MATRIZ","SALOBO","S11D","CARAJAS","SAO LUIS - SEDE","SAO LUIS - VALE","PARAGOMINAS - ETE","PARAGOMINAS - CIP","SANTAREM","MARABA"];
+const CATEGORIES_LIST = ["Viagem","Alimentacao","Combustivel","Software","Equipamento","Transporte","Servico","Material","Treinamento","Outros"];
+const INSTALLMENTS_LIST = ["1","2","3","6","12"];
+
+window.enableEditExpense = () => {
+  if (!currentExpenseId) return;
+  const {id} = currentExpenseId;
+  const e = allExpenses.find(x => x.id===id);
+  if (!e) return;
+  const html = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Data</label><input type="date" id="e-date" value="${e.date||''}"></div>
+      <div class="form-group"><label>Horario</label><input type="time" id="e-time" value="${e.time||''}"></div>
+    </div>
+    <div class="form-group"><label>Valor (R$)</label><input type="number" step="0.01" min="0" id="e-amount" value="${e.amount||0}"></div>
+    <div class="form-group"><label>Parcelas</label>
+      <select id="e-installments">
+        ${INSTALLMENTS_LIST.map(v=>`<option value="${v}" ${String(e.installments||"1")===v?"selected":""}>${v==="1"?"A vista":v+"x"}</option>`).join("")}
+      </select>
+    </div>
+    <div class="form-group"><label>Centro de custo</label>
+      <select id="e-area">
+        ${AREAS_LIST.map(a=>`<option ${e.area===a?"selected":""}>${a}</option>`).join("")}
+      </select>
+    </div>
+    <div class="form-group"><label>Categoria</label>
+      <select id="e-category">
+        ${CATEGORIES_LIST.map(c=>`<option ${e.category===c?"selected":""}>${c}</option>`).join("")}
+      </select>
+    </div>
+    <div class="form-group"><label>Descricao</label><textarea id="e-desc">${e.desc||""}</textarea></div>
+  `;
+  document.getElementById("modal-expense-body").innerHTML = html;
+  document.getElementById("modal-expense-footer-view").style.display = "none";
+  document.getElementById("modal-expense-footer-edit").style.display = "flex";
+};
+
+window.cancelEditExpense = () => {
+  if (!currentExpenseId) return;
+  window.openExpense(currentExpenseId.id, currentExpenseId.mode);
+};
+
+window.saveEditExpense = async () => {
+  if (!currentExpenseId) return;
+  const {id, mode} = currentExpenseId;
+  const colName = mode==="corp" ? "expenses" : "expenses_personal";
+  const amount = parseFloat(document.getElementById("e-amount").value);
+  if (!amount || amount<=0) { toast("Informe um valor valido"); return; }
+  const data = {
+    date: document.getElementById("e-date").value,
+    time: document.getElementById("e-time").value,
+    amount,
+    installments: document.getElementById("e-installments").value,
+    area: document.getElementById("e-area").value,
+    category: document.getElementById("e-category").value,
+    desc: document.getElementById("e-desc").value.trim(),
+    editedBy: currentUser.email,
+    editedAt: new Date().toISOString()
+  };
+  try {
+    await updateDoc(doc(db, colName, id), data);
+    toast("Lancamento atualizado!");
+    closeModal("modal-expense");
+  } catch(err) {
+    console.error("[EDIT EXPENSE] Error:", err);
+    toast("Erro ao salvar: " + err.message);
+  }
+};
+
+window.confirmDeleteExpense = async () => {
+  if (!currentExpenseId) return;
+  if (!confirm("Excluir este lancamento permanentemente? Esta acao nao pode ser desfeita.")) return;
+  const {id, mode} = currentExpenseId;
+  const colName = mode==="corp" ? "expenses" : "expenses_personal";
+  try {
+    await deleteDoc(doc(db, colName, id));
+    toast("Lancamento excluido!");
+    closeModal("modal-expense");
+  } catch(err) {
+    console.error("[DELETE EXPENSE] Error:", err);
+    toast("Erro ao excluir: " + err.message);
+  }
 };
 
 // ---- REPORTS ----
