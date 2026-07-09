@@ -626,14 +626,17 @@ async function checkPin() {
       // de seguranca conseguirem identificar quem esta fazendo cada requisicao.
       try {
         const myUid = auth.currentUser.uid;
+        console.log("[AUTH] Vinculando UID", myUid, "-> admin_users/"+found.id, "companyId="+found.companyId);
         await setDoc(doc(db, "auth_map", myUid), {
           adminUserId: found.id,
           companyId: found.companyId,
           linkedAt: new Date().toISOString()
         });
         await updateDoc(doc(db, "admin_users", found.id), { authUid: myUid });
+        console.log("[AUTH] Vinculo criado com sucesso para UID", myUid);
       } catch(linkErr) {
-        console.error("[AUTH] Erro ao vincular sessao:", linkErr);
+        console.error("[AUTH] Erro ao vincular sessao:", linkErr.code, linkErr.message);
+        toast("Erro ao vincular sessao: " + (linkErr.code || linkErr.message));
       }
       if (found.mustChangePin) {
         showChangePinScreen(true);
@@ -752,6 +755,7 @@ function enterApp() {
 
 function subscribeExpenses() {
   if (unsubExpenses) unsubExpenses();
+  console.log("[EXPENSES] Lendo com UID atual:", auth.currentUser ? auth.currentUser.uid : "(nenhum)", "modo:", currentUserData.mode, "userId filtro:", currentUserData.id);
   let q;
   if (currentUserData.mode === 'corp') {
     // Corporate user: only their own expenses
