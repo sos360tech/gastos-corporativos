@@ -464,7 +464,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, where, onSnapshot, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, query, orderBy, where, onSnapshot, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const app = initializeApp({
@@ -542,6 +542,32 @@ async function ensureAuth() {
 }
 // Dispara logo no carregamento da pagina, sem esperar o usuario interagir.
 ensureAuth().catch(err => console.error("[AUTH] Falha no login anonimo:", err));
+
+// ---- FERRAMENTAS DE TESTE (uso temporario, digitar no console do navegador) ----
+window.debugListExpenses = async () => {
+  try {
+    const snap = await getDocs(collection(db, "expenses"));
+    console.log("[DEBUG] OK! Consegui listar", snap.size, "documentos da colecao expenses.");
+    snap.forEach(d => console.log("  -", d.id, d.data()));
+  } catch(e) {
+    console.error("[DEBUG] FALHOU ao listar expenses:", e.code, e.message);
+  }
+};
+window.debugGetExpense = async (expenseId) => {
+  try {
+    const snap = await getDoc(doc(db, "expenses", expenseId));
+    if (snap.exists()) {
+      console.log("[DEBUG] OK! Consegui ler o documento", expenseId, ":", snap.data());
+    } else {
+      console.log("[DEBUG] Documento nao existe:", expenseId);
+    }
+  } catch(e) {
+    console.error("[DEBUG] FALHOU ao ler", expenseId, ":", e.code, e.message);
+  }
+};
+window.debugWhoAmI = () => {
+  console.log("[DEBUG] auth.currentUser:", auth.currentUser ? auth.currentUser.uid : "(nenhum)", "isAnonymous:", auth.currentUser ? auth.currentUser.isAnonymous : "-");
+};
 
 // ---- AUTH - PIN ----
 let pinValue = "";

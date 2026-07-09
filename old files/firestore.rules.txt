@@ -96,28 +96,27 @@ service cloud.firestore {
 
       allow create: if isCompanyAdmin(request.resource.data.get('companyId', ''));
 
-      allow update: if isCompanyAdmin(resource.data.get('companyId', ''));
-      // usuario dono do registro pode trocar o proprio PIN
-      allow update: if isLinkedToDoc(id) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pin','mustChangePin']);
-      // primeiro vinculo (ou re-vinculo) da sessao anonima ao registro, apos validar o PIN
-      allow update: if isAuth() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['authUid'])
-            && request.resource.data.authUid == request.auth.uid;
+      allow update: if isCompanyAdmin(resource.data.get('companyId', ''))
+        // usuario dono do registro pode trocar o proprio PIN
+        || (isLinkedToDoc(id) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pin','mustChangePin']))
+        // primeiro vinculo (ou re-vinculo) da sessao anonima ao registro, apos validar o PIN
+        || (isAuth() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['authUid'])
+            && request.resource.data.authUid == request.auth.uid);
 
       allow delete: if isCompanyAdmin(resource.data.get('companyId', ''));
     }
 
     // --- expenses: lancamentos corporativos (login por PIN) ---
     match /expenses/{id} {
-      allow read: if isCompanyAdmin(resource.data.get('companyId', ''));
-      allow read: if isLinkedTo(resource.data.get('companyId', ''));
+      allow read: if isCompanyMember(resource.data.get('companyId', ''));
 
       allow create: if isLinkedTo(request.resource.data.get('companyId', ''))
         && request.resource.data.userId == linkedProfile().get('adminUserId', '');
 
-      allow update, delete: if isCompanyAdmin(resource.data.get('companyId', ''));
-      allow update, delete: if isLinkedTo(resource.data.get('companyId', ''))
+      allow update, delete: if isCompanyAdmin(resource.data.get('companyId', ''))
+        || (isLinkedTo(resource.data.get('companyId', ''))
             && resource.data.get('userId', '') == linkedProfile().get('adminUserId', '')
-            && resource.data.get('status', 'pending') == 'pending';
+            && resource.data.get('status', 'pending') == 'pending');
     }
 
     // --- expenses_personal: lancamentos do login Google (uso pessoal) ---
