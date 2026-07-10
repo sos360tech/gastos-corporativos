@@ -39,16 +39,20 @@ service cloud.firestore {
     // GASTOS CORPORATIVOS SOS360 — Fase 5 (v2): login por e-mail/senha
     // ============================================================
     // Identidade real do Firebase Auth (uid estavel + e-mail verificado
-    // criptograficamente), sem sessao anonima nem tabela-ponte.
+    // criptograficamente). Funcoes otimizadas para o MINIMO de chamadas
+    // get()/exists() por documento avaliado, ja que o Firestore impoe um
+    // orcamento de leituras auxiliares por requisicao - com muitas chamadas
+    // por documento, consultas em lista com varios itens podem estourar
+    // esse orcamento e virar "permission-denied" mesmo com dados corretos.
 
+    // Uma unica leitura do perfil (sem exists() separado). E seguro assumir
+    // que todo uid autenticado de verdade tem um admin_users correspondente,
+    // pois a conta so e criada pelo admin, que ja grava o perfil junto.
     function myProfile() {
       return get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data;
     }
-    function hasProfile() {
-      return isAuth() && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
-    }
     function isCompanyMember(companyId) {
-      return hasProfile() && myProfile().get('companyId', '') == companyId;
+      return isAuth() && myProfile().get('companyId', '') == companyId;
     }
     function isCompanyAdmin(companyId) {
       return isAuth() &&
@@ -66,8 +70,6 @@ service cloud.firestore {
     // --- admin_users: perfil real, doc ID = uid do Firebase Auth ---
     // A conta e criada diretamente pelo admin (via app secundario, sem
     // deslogar a propria sessao) + e-mail de definicao de senha do Firebase.
-    // Nao ha mais fluxo de auto-cadastro pelo funcionario, entao a criacao
-    // do perfil e feita exclusivamente pelo admin da empresa.
     match /admin_users/{uid} {
       allow read: if isAuth();
       allow create: if isCompanyAdmin(request.resource.data.get('companyId', ''));
@@ -76,18 +78,31 @@ service cloud.firestore {
       allow delete: if isCompanyAdmin(resource.data.get('companyId', ''));
     }
 
-    // --- expenses: lancamentos corporativos ---
-    match /expenses/{id} {
-      allow read: if isCompanyAdmin(resource.data.get('companyId', ''));
+    // --- cost_centers: centros de custo por empresa, geridos pelo admin ---
+    match /cost_centers/{id} {
       allow read: if isCompanyMember(resource.data.get('companyId', ''));
+      allow read: if isCompanyAdmin(resource.data.get('companyId', ''));
+      allow create: if isCompanyAdmin(request.resource.data.get('companyId', ''));
+      allow update, delete: if isCompanyAdmin(resource.data.get('companyId', ''));
+    }
+
+    // --- expenses: lancamentos corporativos ---
+    // Duas regras "allow" separadas (em vez de um so || dentro da mesma
+    // condicao) - o Firestore avalia cada allow em ordem e concede acesso
+    // assim que uma delas permitir, sem precisar avaliar a seguinte.
+    // Colocamos o caso mais comum (funcionario comum, 1 leitura auxiliar)
+    // primeiro, e o caso raro (admin, 2 leituras auxiliares) depois.
+    match /expenses/{id} {
+      allow read: if isCompanyMember(resource.data.get('companyId', ''));
+      allow read: if isCompanyAdmin(resource.data.get('companyId', ''));
 
       allow create: if isCompanyMember(request.resource.data.get('companyId', ''))
         && request.resource.data.userId == request.auth.uid;
 
-      allow update, delete: if isCompanyAdmin(resource.data.get('companyId', ''));
       allow update, delete: if isCompanyMember(resource.data.get('companyId', ''))
         && resource.data.get('userId', '') == request.auth.uid
         && resource.data.get('status', 'pending') == 'pending';
+      allow update, delete: if isCompanyAdmin(resource.data.get('companyId', ''));
     }
 
     // --- expenses_personal: lancamentos do login Google (uso pessoal, sem empresa) ---

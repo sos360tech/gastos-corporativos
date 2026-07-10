@@ -140,6 +140,10 @@
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Usuarios
     </div>
+    <div class="nav-item" onclick="showScreen('costcenters',this)">
+      <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+      Centros de Custo
+    </div>
     <div class="sidebar-bottom">
       <div class="user-info" id="admin-email">-</div>
       <button class="btn-logout" onclick="doLogout()">Sair</button>
@@ -277,6 +281,35 @@
       </div>
     </div>
 
+    <!-- CENTROS DE CUSTO -->
+    <div class="screen" id="screen-costcenters">
+      <p class="page-title">Centros de Custo</p>
+      <p class="page-sub">Gerencie os centros de custo disponiveis no app dos usuarios corporativos</p>
+      <div class="card">
+        <div class="card-header">
+          <p class="card-title">Centros cadastrados</p>
+          <button class="btn btn-primary" onclick="openAddCostCenter()">+ Novo centro de custo</button>
+        </div>
+        <table>
+          <thead><tr><th>Nome</th><th>Status</th><th>Acoes</th></tr></thead>
+          <tbody id="costcenters-table"></tbody>
+        </table>
+        <div id="costcenters-empty" class="empty-table" style="display:none">Nenhum centro de custo cadastrado</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL CENTRO DE CUSTO -->
+<div class="modal-ov" id="modal-costcenter" onclick="closeModalCostCenter(event)">
+  <div class="modal">
+    <p class="modal-title" id="cc-modal-title">Novo Centro de Custo</p>
+    <div class="form-group"><label>Nome *</label><input type="text" id="cc-name" placeholder="Ex: MATRIZ"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-costcenter')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCostCenter()">Salvar</button>
+    </div>
   </div>
 </div>
 
@@ -366,6 +399,7 @@ const CURRENT_COMPANY_ID = "sos360";
 
 let allExpenses = [];
 let allUsers = [];
+let allCostCenters = [];
 let currentExpenseId = null;
 let currentUser = null;
 
@@ -451,6 +485,13 @@ function initApp() {
     }
   }
   window.loadUsers();
+
+  // Load cost centers (ao vivo)
+  onSnapshot(query(collection(db,"cost_centers"), where("companyId","==",CURRENT_COMPANY_ID)), snap => {
+    allCostCenters = snap.docs.map(d => ({...d.data(), id:d.id}))
+      .sort((a,b) => (a.name||"").localeCompare(b.name||""));
+    renderCostCenters();
+  });
 }
 
 // ---- NAVIGATION ----
@@ -796,15 +837,11 @@ window.saveUser = async () => {
   btn.disabled = true; btn.textContent = "Criando...";
   let secondaryApp = null;
   try {
-    // Ja existe um perfil ativo com esse e-mail?
     const existingSnap = await getDocs(query(collection(db,"admin_users"), where("email","==",email)));
     if (!existingSnap.empty) {
       toast("Ja existe um usuario cadastrado com esse e-mail.");
       return;
     }
-    // Cria a conta numa instancia PARALELA do Firebase, para nao deslogar
-    // o admin da propria sessao (createUserWithEmailAndPassword loga
-    // automaticamente como o usuario recem-criado na instancia usada).
     secondaryApp = initializeApp(firebaseConfig, "secondary-" + Date.now());
     const secondaryAuth = getAuth(secondaryApp);
     if (isLocalTest) {
@@ -849,6 +886,98 @@ window.removeUser = async id => {
   await deleteDoc(doc(db,"admin_users",id));
   toast("Usuario removido!");
   loadUsers();
+};
+
+// ---- CENTROS DE CUSTO ----
+const DEFAULT_COST_CENTERS = ["MATRIZ","SALOBO","S11D","CARAJAS","SAO LUIS - SEDE","SAO LUIS - VALE","PARAGOMINAS - ETE","PARAGOMINAS - CIP","SANTAREM","MARABA"];
+
+function renderCostCenters() {
+  const tbody = document.getElementById("costcenters-table");
+  const empty = document.getElementById("costcenters-empty");
+  if (!allCostCenters.length) {
+    tbody.innerHTML = "";
+    empty.style.display = "block";
+    empty.innerHTML = 'Nenhum centro de custo cadastrado. <a href="#" onclick="seedDefaultCostCenters();return false" style="color:var(--accent)">Importar os 10 centros padrao da SOS360</a>';
+    return;
+  }
+  empty.style.display = "none";
+  tbody.innerHTML = allCostCenters.map(c => `
+    <tr>
+      <td>${c.name}</td>
+      <td><span class="badge ${c.active===false?"badge-blocked":"badge-approved"}">${c.active===false?"Inativo":"Ativo"}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-outline btn-sm" onclick="openEditCostCenter('${c.id}')">Editar</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleCostCenterActive('${c.id}',${c.active===false})">${c.active===false?"Ativar":"Desativar"}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCostCenter('${c.id}')">Excluir</button>
+      </td>
+    </tr>`).join("");
+}
+
+let editingCostCenterId = null;
+
+window.openAddCostCenter = () => {
+  editingCostCenterId = null;
+  document.getElementById("cc-modal-title").textContent = "Novo Centro de Custo";
+  document.getElementById("cc-name").value = "";
+  document.getElementById("modal-costcenter").classList.add("open");
+};
+
+window.openEditCostCenter = (id) => {
+  const c = allCostCenters.find(x => x.id === id);
+  if (!c) return;
+  editingCostCenterId = id;
+  document.getElementById("cc-modal-title").textContent = "Editar Centro de Custo";
+  document.getElementById("cc-name").value = c.name || "";
+  document.getElementById("modal-costcenter").classList.add("open");
+};
+
+window.closeModalCostCenter = ev => { if(ev.target===document.getElementById("modal-costcenter")) closeModal("modal-costcenter"); };
+
+window.saveCostCenter = async () => {
+  const name = document.getElementById("cc-name").value.trim().toUpperCase();
+  if (!name) { toast("Informe o nome do centro de custo"); return; }
+  try {
+    if (editingCostCenterId) {
+      await updateDoc(doc(db,"cost_centers",editingCostCenterId), { name });
+      toast("Centro de custo atualizado!");
+    } else {
+      const dup = allCostCenters.some(c => (c.name||"").toUpperCase() === name);
+      if (dup) { toast("Ja existe um centro de custo com esse nome."); return; }
+      await addDoc(collection(db,"cost_centers"), {
+        name, companyId: CURRENT_COMPANY_ID, active: true,
+        createdAt: new Date().toISOString(), createdBy: currentUser.email
+      });
+      toast("Centro de custo criado!");
+    }
+    closeModal("modal-costcenter");
+  } catch(err) {
+    toast("Erro: " + err.message);
+  }
+};
+
+window.toggleCostCenterActive = async (id, activate) => {
+  await updateDoc(doc(db,"cost_centers",id), { active: activate });
+  toast(activate ? "Centro de custo ativado!" : "Centro de custo desativado!");
+};
+
+window.deleteCostCenter = async (id) => {
+  if (!confirm("Excluir este centro de custo? Lancamentos ja feitos com ele nao serao afetados.")) return;
+  await deleteDoc(doc(db,"cost_centers",id));
+  toast("Centro de custo excluido!");
+};
+
+window.seedDefaultCostCenters = async () => {
+  try {
+    for (const name of DEFAULT_COST_CENTERS) {
+      await addDoc(collection(db,"cost_centers"), {
+        name, companyId: CURRENT_COMPANY_ID, active: true,
+        createdAt: new Date().toISOString(), createdBy: currentUser.email
+      });
+    }
+    toast("Centros de custo padrao importados!");
+  } catch(err) {
+    toast("Erro: " + err.message);
+  }
 };
 
 // ---- TOAST ----

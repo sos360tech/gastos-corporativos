@@ -293,15 +293,11 @@
         </div>
       </div>
     </div>
-    <div class="fsec">
+    <div class="fsec" id="f-area-section">
       <p class="fsec-title">Centro de custo *</p>
       <div class="field">
         <select id="f-area">
           <option value="">Selecione...</option>
-          <option>MATRIZ</option><option>SALOBO</option><option>S11D</option>
-          <option>CARAJAS</option><option>SAO LUIS - SEDE</option><option>SAO LUIS - VALE</option>
-          <option>PARAGOMINAS - ETE</option><option>PARAGOMINAS - CIP</option>
-          <option>SANTAREM</option><option>MARABA</option>
         </select>
       </div>
     </div>
@@ -538,6 +534,7 @@ window.submitEmailLogin = async () => {
   const email = document.getElementById("email-login-email").value.trim().toLowerCase();
   const password = document.getElementById("email-login-password").value;
   const errEl = document.getElementById("email-login-error");
+  errEl.style.color = "var(--danger)";
   errEl.style.opacity = "0";
   if (!email || !password) { errEl.textContent = "Preencha e-mail e senha."; errEl.style.opacity = "1"; return; }
   const btn = document.getElementById("email-login-btn");
@@ -562,7 +559,7 @@ window.submitEmailLogin = async () => {
 window.submitForgotPassword = async () => {
   const email = document.getElementById("email-login-email").value.trim().toLowerCase();
   const errEl = document.getElementById("email-login-error");
-  if (!email) { errEl.textContent = "Digite seu e-mail no campo acima primeiro."; errEl.style.opacity = "1"; return; }
+  if (!email) { errEl.textContent = "Digite seu e-mail no campo acima primeiro."; errEl.style.color="var(--danger)"; errEl.style.opacity = "1"; return; }
   try {
     await sendPasswordResetEmail(auth, email);
     errEl.style.color = "var(--success)";
@@ -704,7 +701,7 @@ function renderHist() {
 function eRow(e) {
   return '<div class="exp-item" data-id="'+e.id+'" onclick="openDetail(this.dataset.id)">'
     +'<div class="exp-icon">'+ICO_RECEIPT+'</div>'
-    +'<div class="exp-info"><p class="exp-merchant">'+e.area+''+statusBadge(e.status||"pending")+'</p>'
+    +'<div class="exp-info"><p class="exp-merchant">'+(e.area||e.category)+''+statusBadge(e.status||"pending")+'</p>'
     +'<p class="exp-meta">'+fDate(e.date)+' &middot; '+e.category+'</p></div>'
     +'<span class="exp-amount">'+fBRL(e.amount)+'</span></div>';
 }
@@ -716,11 +713,30 @@ document.querySelectorAll("#frow .fchip").forEach(c=>{
   };
 });
 
+let costCentersCache = null; // cache por sessao, para nao rebuscar toda vez
+
+async function loadCostCentersIntoSelect() {
+  const sel = document.getElementById("f-area");
+  sel.innerHTML = '<option value="">Carregando...</option>';
+  try {
+    if (!costCentersCache) {
+      const snap = await getDocs(query(collection(db,"cost_centers"),
+        where("companyId","==",currentUserData.companyId),
+        where("active","==",true)));
+      costCentersCache = snap.docs.map(d => d.data().name).sort();
+    }
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      costCentersCache.map(name => `<option>${name}</option>`).join("");
+  } catch(err) {
+    console.error("[COST CENTERS] Erro ao carregar:", err.code, err.message);
+    sel.innerHTML = '<option value="">Erro ao carregar - tente novamente</option>';
+  }
+}
+
 function initForm() {
   document.getElementById("f-date").value=new Date().toISOString().split("T")[0];
   document.getElementById("f-time").value=new Date().toTimeString().slice(0,5);
   ["f-amount","f-desc"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("f-area").value="";
   receipt=null;
   document.getElementById("f-prev-wrap").style.display="none";
   document.getElementById("f-zone").classList.remove("has-file");
@@ -729,6 +745,14 @@ function initForm() {
   document.getElementById("f-size").textContent="";
   document.querySelectorAll("#f-inst .chip").forEach(c=>c.classList.toggle("active",c.dataset.v==="1"));
   document.querySelectorAll("#f-cat .chip").forEach(c=>c.classList.remove("active"));
+  if (currentUserData.mode === 'corp') {
+    document.getElementById("f-area-section").style.display = "block";
+    loadCostCentersIntoSelect();
+  } else {
+    // Uso pessoal (Google) nao tem centro de custo - campo some da tela
+    document.getElementById("f-area-section").style.display = "none";
+    document.getElementById("f-area").innerHTML = '<option value=""></option>';
+  }
 }
 
 document.querySelectorAll("#f-inst .chip").forEach(c=>{
@@ -777,8 +801,9 @@ window.saveExp = async () => {
   const area=document.getElementById("f-area").value;
   const cat=document.querySelector("#f-cat .chip.active");
   const inst=document.querySelector("#f-inst .chip.active");
+  const isCorp = currentUserData.mode==='corp';
   if(!amount||parseFloat(amount)<=0){toast("Informe o valor");return;}
-  if(!area){toast("Selecione o centro de custo");return;}
+  if(isCorp && !area){toast("Selecione o centro de custo");return;}
   if(!cat){toast("Selecione a categoria");return;}
   dot("busy");
   try {
@@ -795,13 +820,13 @@ window.saveExp = async () => {
       if(imgData.success){receiptURL=imgData.data.url;receiptThumb=imgData.data.thumb?imgData.data.thumb.url:imgData.data.url;}
       else{toast("Erro na foto, salvando sem comprovante...");await new Promise(r=>setTimeout(r,2000));}
     }
-    const colName = currentUserData.mode==='corp' ? "expenses" : "expenses_personal";
+    const colName = isCorp ? "expenses" : "expenses_personal";
     const expData = {
       date:document.getElementById("f-date").value,
       time:document.getElementById("f-time").value,
       amount:parseFloat(amount),
       installments:inst?inst.dataset.v:"1",
-      area,category:cat.dataset.v,
+      category:cat.dataset.v,
       desc:document.getElementById("f-desc").value.trim(),
       receipt:receiptURL,receiptThumb,
       user:currentUserData.name,
@@ -809,8 +834,8 @@ window.saveExp = async () => {
       status:"pending",
       createdAt:new Date().toISOString()
     };
+    if(isCorp) { expData.area = area; expData.companyId=currentUserData.companyId; }
     if(currentUserData.mode==='google') expData.uid=currentUserData.id;
-    if(currentUserData.mode==='corp') expData.companyId=currentUserData.companyId;
     await addDoc(collection(db,colName),expData);
     toast("Lancamento salvo!");
     setTimeout(()=>{initForm();goTo("home",document.getElementById("nb-home"));},800);
@@ -823,7 +848,7 @@ window.openDetail = id => {
   let html='<p class="modal-title">'+fBRL(e.amount)+'</p>'
     +'<p class="modal-sub">'+fDate(e.date)+(e.time?" as "+e.time:"")+" &middot; "+e.category+'</p>'
     +'<div style="margin-bottom:16px">'+statusBadge(e.status||"pending")+'</div>'
-    +'<div class="det-row"><span class="k">Centro de custo</span><span class="v">'+e.area+'</span></div>'
+    +(e.area?'<div class="det-row"><span class="k">Centro de custo</span><span class="v">'+e.area+'</span></div>':'')
     +'<div class="det-row"><span class="k">Categoria</span><span class="v">'+e.category+'</span></div>'
     +'<div class="det-row"><span class="k">Parcelas</span><span class="v">'+inst+'</span></div>';
   if(e.desc) html+='<div class="det-row"><span class="k">Descricao</span><span class="v">'+e.desc+'</span></div>';
