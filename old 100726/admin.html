@@ -267,10 +267,10 @@
       <div class="card">
         <div class="card-header">
           <p class="card-title">Usuarios cadastrados</p>
-          <button class="btn btn-primary" onclick="openAddUser()">+ Convidar usuario</button>
+          <button class="btn btn-primary" onclick="openAddUser()">+ Adicionar usuario</button>
         </div>
         <table>
-          <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Acoes</th></tr></thead>
+          <thead><tr><th>Nome</th><th>PIN</th><th>Perfil</th><th>Status</th><th>Acoes</th></tr></thead>
           <tbody id="users-table"></tbody>
         </table>
         <div id="users-empty" class="empty-table" style="display:none">Nenhum usuario cadastrado</div>
@@ -299,13 +299,16 @@
   </div>
 </div>
 
-<!-- MODAL CONVIDAR USUARIO -->
+<!-- MODAL ADICIONAR USUARIO -->
 <div class="modal-ov" id="modal-user" onclick="closeModalUser(event)">
   <div class="modal">
-    <p class="modal-title">Convidar Usuario</p>
+    <p class="modal-title">Adicionar Usuario</p>
     <div class="form-group"><label>Nome completo *</label><input type="text" id="u-name" placeholder="Ex: Felipe Santos"></div>
-    <div class="form-group"><label>E-mail *</label><input type="email" id="u-email" placeholder="Ex: felipe@sos360.com.br"></div>
-    <p style="font-size:11px;color:var(--text3);margin:-8px 0 8px">A conta e criada automaticamente e um e-mail para definir a senha e enviado pelo Firebase.</p>
+    <div class="form-group">
+      <label>PIN inicial * (4 digitos)</label>
+      <input type="tel" id="u-pin" placeholder="Ex: 1234" maxlength="4" pattern="[0-9]{4}" style="font-family:var(--mono);font-size:20px;letter-spacing:8px">
+      <p style="font-size:11px;color:var(--text3);margin-top:4px">O usuario podera trocar o PIN no primeiro acesso.</p>
+    </div>
     <div class="form-group"><label>Perfil</label>
       <select id="u-role">
         <option value="user">Usuario</option>
@@ -314,7 +317,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</button>
-      <button class="btn btn-primary" id="save-user-btn" onclick="saveUser()">Criar conta e enviar e-mail</button>
+      <button class="btn btn-primary" onclick="saveUser()">Salvar</button>
     </div>
   </div>
 </div>
@@ -335,29 +338,21 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, setDoc, where, connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, setDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyDdFODD9c1PHLKoVV0MqLmqSq2-A43xIDw",
   authDomain: "sos360-gastos.firebaseapp.com",
   projectId: "sos360-gastos",
   storageBucket: "sos360-gastos.firebasestorage.app",
   messagingSenderId: "269701265611",
   appId: "1:269701265611:web:71756f24407ba9003d434e"
-};
-const app = initializeApp(firebaseConfig);
-const isLocalTest = (location.hostname === "localhost" || location.hostname === "127.0.0.1");
+});
 
 const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-
-if (isLocalTest) {
-  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-  connectFirestoreEmulator(db, "127.0.0.1", 8080);
-  console.log("[EMULATOR] admin.html conectado aos emuladores locais");
-}
 
 // Admin emails
 const ADMIN_EMAILS = ["kakocbarros@gmail.com"];
@@ -428,8 +423,8 @@ function initApp() {
     updateUserFilters();
   }
 
-  // Corporate expenses (todos os usuarios da empresa)
-  onSnapshot(query(collection(db,"expenses"), where("companyId","==",CURRENT_COMPANY_ID), orderBy("createdAt","desc")), snap => {
+  // Corporate expenses (all users with PIN)
+  onSnapshot(query(collection(db,"expenses"), orderBy("createdAt","desc")), snap => {
     corpExpenses = snap.docs.map(d => ({...d.data(), id:d.id, mode:"corp"}));
     mergeAndRender();
   });
@@ -444,6 +439,7 @@ function initApp() {
   window.loadUsers = async function() {
     try {
       const snap = await getDocs(collection(db,"admin_users"));
+      console.log("[ADMIN] Users loaded:", snap.size);
       allUsers = snap.docs.map(d => ({...d.data(), id:d.id}));
       renderUsers();
     } catch(err) {
@@ -755,86 +751,57 @@ function renderUsers() {
   tbody.innerHTML = allUsers.map(u => `
     <tr>
       <td>${u.name||"-"}</td>
-      <td>${u.email||"-"}</td>
+      <td style="font-family:var(--mono);letter-spacing:4px">${u.pin ? "****" : "-"}</td>
       <td><span class="badge ${u.role==="admin"?"badge-active":"badge-pending"}">${u.role==="admin"?"Admin":"Usuario"}</span></td>
       <td><span class="badge ${u.blocked?"badge-blocked":"badge-approved"}">${u.blocked?"Bloqueado":"Ativo"}</span></td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" onclick="resendPasswordEmail('${u.email}')">Reenviar senha</button>
+      <td style="display:flex;gap:6px">
         <button class="btn btn-outline btn-sm" onclick="toggleBlock('${u.id}',${!!u.blocked})">${u.blocked?"Desbloquear":"Bloquear"}</button>
         <button class="btn btn-danger btn-sm" onclick="removeUser('${u.id}')">Remover</button>
       </td>
     </tr>`).join("");
 }
 
-window.resendPasswordEmail = async (email) => {
-  try {
-    await sendPasswordResetEmail(auth, email);
-    toast("E-mail de definicao de senha reenviado para " + email);
-  } catch(err) {
-    toast("Erro: " + err.message);
-  }
-};
-
 window.openAddUser = () => {
   document.getElementById("u-name").value="";
-  document.getElementById("u-email").value="";
+  document.getElementById("u-pin").value="";
   document.getElementById("u-role").value="user";
   document.getElementById("modal-user").classList.add("open");
 };
 
-function generateTempPassword() {
-  return Math.random().toString(36).slice(-8) + "A1!";
-}
-
 window.saveUser = async () => {
   const name = document.getElementById("u-name").value.trim();
-  const email = document.getElementById("u-email").value.trim().toLowerCase();
+  const pinRaw = document.getElementById("u-pin").value.trim();
+  const pin = String(pinRaw);
   const role = document.getElementById("u-role").value;
   if (!name) { toast("Informe o nome do usuario"); return; }
-  if (!email || !email.includes("@")) { toast("Informe um e-mail valido"); return; }
-  const btn = document.getElementById("save-user-btn");
-  btn.disabled = true; btn.textContent = "Criando...";
-  let secondaryApp = null;
+  if (!pin || pin.length !== 4 || !/^[0-9]{4}$/.test(pin)) { toast("PIN deve ter exatamente 4 digitos numericos"); return; }
   try {
-    // Ja existe um perfil ativo com esse e-mail?
-    const existingSnap = await getDocs(query(collection(db,"admin_users"), where("email","==",email)));
-    if (!existingSnap.empty) {
-      toast("Ja existe um usuario cadastrado com esse e-mail.");
+    // Check if PIN already exists
+    const snap = await getDocs(collection(db,"admin_users"));
+    let pinExists = false;
+    let pinOwner = "";
+    snap.forEach(d => {
+      const stored = String(d.data().pin).trim();
+      if (stored === pin) { pinExists = true; pinOwner = d.data().name; }
+    });
+    if (pinExists) {
+      toast("PIN " + pin + " ja esta em uso por " + pinOwner + ". Escolha outro.");
       return;
     }
-    // Cria a conta numa instancia PARALELA do Firebase, para nao deslogar
-    // o admin da propria sessao (createUserWithEmailAndPassword loga
-    // automaticamente como o usuario recem-criado na instancia usada).
-    secondaryApp = initializeApp(firebaseConfig, "secondary-" + Date.now());
-    const secondaryAuth = getAuth(secondaryApp);
-    if (isLocalTest) {
-      connectAuthEmulator(secondaryAuth, "http://127.0.0.1:9099", { disableWarnings: true });
-    }
-    const tempPassword = generateTempPassword();
-    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, tempPassword);
-    const uid = cred.user.uid;
-    await sendPasswordResetEmail(secondaryAuth, email);
-    await signOut(secondaryAuth);
-
-    await setDoc(doc(db,"admin_users", uid), {
-      name, email, role,
+    const docRef = await addDoc(collection(db,"admin_users"), {
+      name, pin, role,
       companyId: CURRENT_COMPANY_ID,
       blocked: false,
+      mustChangePin: true,
       createdAt: new Date().toISOString(),
       createdBy: currentUser.email
     });
-    toast("Conta criada! E-mail de definicao de senha enviado para " + email);
+    toast("Usuario " + name + " adicionado! PIN inicial: " + pin);
     closeModal("modal-user");
     await window.loadUsers();
   } catch(err) {
     console.error("[SAVE USER] Error:", err);
-    if (err.code === "auth/email-already-in-use") {
-      toast("Ja existe uma conta no Firebase Auth com esse e-mail.");
-    } else {
-      toast("Erro ao criar conta: " + err.message);
-    }
-  } finally {
-    btn.disabled = false; btn.textContent = "Criar conta e enviar e-mail";
+    toast("Erro ao salvar: " + err.message);
   }
 };
 

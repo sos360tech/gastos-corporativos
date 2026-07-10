@@ -36,16 +36,20 @@ service cloud.firestore {
     match /seguros_v1/{id} { allow read: if isAuth(); allow write: if canWrite(); }
 
     // ============================================================
-    // GASTOS CORPORATIVOS SOS360 — Fase 5: seguranca multi-empresa
+    // GASTOS CORPORATIVOS SOS360 — Fase 5 (v2): login por e-mail/senha
     // ============================================================
+    // Identidade real do Firebase Auth (uid estavel + e-mail verificado
+    // criptograficamente), sem sessao anonima nem tabela-ponte.
 
-    // --- Helpers de identidade ---
-
-    // Admin de empresa: reconhecido pelo e-mail do Google Auth cadastrado
-    // no documento da empresa (campo adminEmail), sem precisar de doc extra.
-    // Usamos .get(campo, default) em vez de .campo para nunca lancar erro
-    // quando o campo nao existir (o que derrubaria a regra inteira mesmo
-    // dentro de um ||).
+    function myProfile() {
+      return get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data;
+    }
+    function hasProfile() {
+      return isAuth() && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+    function isCompanyMember(companyId) {
+      return hasProfile() && myProfile().get('companyId', '') == companyId;
+    }
     function isCompanyAdmin(companyId) {
       return isAuth() &&
         companyId is string &&
@@ -53,74 +57,40 @@ service cloud.firestore {
         get(/databases/$(database)/documents/companies/$(companyId)).data.get('adminEmail', '') == request.auth.token.get('email', '');
     }
 
-    // Usuario PIN: identidade anonima vinculada via auth_map/{uid} -> { adminUserId, companyId }
-    function linkedProfile() {
-      return get(/databases/$(database)/documents/auth_map/$(request.auth.uid)).data;
-    }
-    function isLinked() {
-      return isAuth() && exists(/databases/$(database)/documents/auth_map/$(request.auth.uid));
-    }
-    function isLinkedTo(companyId) {
-      return isLinked() && linkedProfile().get('companyId', '') == companyId;
-    }
-    function isLinkedToDoc(adminUserId) {
-      return isLinked() && linkedProfile().get('adminUserId', '') == adminUserId;
-    }
-    function isCompanyMember(companyId) {
-      return isCompanyAdmin(companyId) || isLinkedTo(companyId);
-    }
-
-    // --- companies: cadastro das empresas (gerido hoje via ferramenta de migracao/admin) ---
+    // --- companies ---
     match /companies/{companyId} {
       allow read: if isCompanyAdmin(companyId);
-      allow write: if false; // criacao/edicao feita via ferramenta administrativa dedicada (Fase 4)
+      allow write: if false;
     }
 
-    // --- auth_map: liga uma sessao autenticada (anonima ou nao) a um registro em admin_users ---
-    match /auth_map/{uid} {
-      allow read: if isAuth() && request.auth.uid == uid;
-      allow create, update: if isAuth() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['adminUserId','companyId','linkedAt'])
-        && exists(/databases/$(database)/documents/admin_users/$(request.resource.data.adminUserId))
-        && get(/databases/$(database)/documents/admin_users/$(request.resource.data.adminUserId)).data.get('companyId', '') == request.resource.data.companyId;
-      allow delete: if false;
-    }
-
-    // --- admin_users: cadastro de PIN/perfil dos usuarios de cada empresa ---
-    match /admin_users/{id} {
-      // Leitura precisa continuar aberta a qualquer sessao autenticada (mesmo anonima),
-      // pois a comparacao do PIN acontece no app do usuario (sem Cloud Functions).
-      // Isso impede acesso de quem nao passa nem pelo login anonimo, mas nao impede
-      // um usuario ja autenticado de ler PINs da propria base.
+    // --- admin_users: perfil real, doc ID = uid do Firebase Auth ---
+    // A conta e criada diretamente pelo admin (via app secundario, sem
+    // deslogar a propria sessao) + e-mail de definicao de senha do Firebase.
+    // Nao ha mais fluxo de auto-cadastro pelo funcionario, entao a criacao
+    // do perfil e feita exclusivamente pelo admin da empresa.
+    match /admin_users/{uid} {
       allow read: if isAuth();
-
       allow create: if isCompanyAdmin(request.resource.data.get('companyId', ''));
-
+      allow update: if isAuth() && request.auth.uid == uid;
       allow update: if isCompanyAdmin(resource.data.get('companyId', ''));
-      // usuario dono do registro pode trocar o proprio PIN
-      allow update: if isLinkedToDoc(id) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pin','mustChangePin']);
-      // primeiro vinculo (ou re-vinculo) da sessao anonima ao registro, apos validar o PIN
-      allow update: if isAuth() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['authUid'])
-            && request.resource.data.authUid == request.auth.uid;
-
       allow delete: if isCompanyAdmin(resource.data.get('companyId', ''));
     }
 
-    // --- expenses: lancamentos corporativos (login por PIN) ---
+    // --- expenses: lancamentos corporativos ---
     match /expenses/{id} {
       allow read: if isCompanyAdmin(resource.data.get('companyId', ''));
-      allow read: if isLinkedTo(resource.data.get('companyId', ''));
+      allow read: if isCompanyMember(resource.data.get('companyId', ''));
 
-      allow create: if isLinkedTo(request.resource.data.get('companyId', ''))
-        && request.resource.data.userId == linkedProfile().get('adminUserId', '');
+      allow create: if isCompanyMember(request.resource.data.get('companyId', ''))
+        && request.resource.data.userId == request.auth.uid;
 
       allow update, delete: if isCompanyAdmin(resource.data.get('companyId', ''));
-      allow update, delete: if isLinkedTo(resource.data.get('companyId', ''))
-            && resource.data.get('userId', '') == linkedProfile().get('adminUserId', '')
-            && resource.data.get('status', 'pending') == 'pending';
+      allow update, delete: if isCompanyMember(resource.data.get('companyId', ''))
+        && resource.data.get('userId', '') == request.auth.uid
+        && resource.data.get('status', 'pending') == 'pending';
     }
 
-    // --- expenses_personal: lancamentos do login Google (uso pessoal) ---
+    // --- expenses_personal: lancamentos do login Google (uso pessoal, sem empresa) ---
     match /expenses_personal/{id} {
       allow read: if isAuth() && resource.data.get('uid', '') == request.auth.uid;
       allow create: if isAuth() && request.resource.data.uid == request.auth.uid;

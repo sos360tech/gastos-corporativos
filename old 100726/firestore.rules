@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // PAINEL DO TIME — regras existentes, inalteradas
+    // ============================================================
+    function isAuth() {
+      return request.auth != null;
+    }
+    function profile() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
+    }
+    function isGestor() {
+      return isAuth() && profile().role == 'gestor';
+    }
+    function canManageTeam() {
+      return isAuth() && (profile().role == 'gestor' || profile().canInviteMembers == true);
+    }
+    function canWrite() {
+      return isAuth() && profile().role != 'visualizador';
+    }
+    match /profiles/{id} {
+      allow read: if isAuth() && (request.auth.uid == id || canManageTeam());
+      allow write: if isGestor() || request.auth.uid == id;
+    }
+    match /tasks/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /members/{id} { allow read: if isAuth(); allow write: if isGestor(); }
+    match /messages/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /crm_companies/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /crm_proposals/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /crm_contracts/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /crm_visits/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /contracts_v2/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /projects_v1/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+    match /seguros_v1/{id} { allow read: if isAuth(); allow write: if canWrite(); }
+
+    // ============================================================
+    // GASTOS CORPORATIVOS SOS360
+    // ============================================================
+    // Revertido temporariamente para o estado aberto original (pre-Fase 5),
+    // para destravar o uso do app enquanto reformulamos a seguranca
+    // multi-empresa com testes fora de producao.
+    match /admin_users/{id} { allow read, write: if true; }
+    match /expenses/{id} { allow read, write: if true; }
+    match /expenses_personal/{id} { allow read, write: if true; }
+  }
+}
