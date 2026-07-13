@@ -480,6 +480,12 @@ onAuthStateChanged(auth, async user => {
           await signOut(auth);
           return;
         }
+        const companySnap = await getDoc(doc(db, "companies", p.companyId));
+        if (!companySnap.exists() || companySnap.data().active === false) {
+          toast("Sua empresa esta com o acesso suspenso. Fale com o administrador.");
+          await signOut(auth);
+          return;
+        }
         currentUserData = { id: user.uid, mode: "corp", ...p };
         enterApp();
       } else {

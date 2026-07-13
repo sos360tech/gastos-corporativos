@@ -51,14 +51,18 @@ service cloud.firestore {
     function myProfile() {
       return get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data;
     }
+    // Repetir get() no mesmo caminho dentro de uma unica avaliacao de regra
+    // nao conta como leitura extra (o Firestore reaproveita o resultado).
     function isCompanyMember(companyId) {
-      return isAuth() && myProfile().get('companyId', '') == companyId;
+      return isAuth() && myProfile().get('companyId', '') == companyId
+        && get(/databases/$(database)/documents/companies/$(companyId)).data.get('active', true) == true;
     }
     function isCompanyAdmin(companyId) {
       return isAuth() &&
         companyId is string &&
         exists(/databases/$(database)/documents/companies/$(companyId)) &&
-        get(/databases/$(database)/documents/companies/$(companyId)).data.get('adminEmail', '') == request.auth.token.get('email', '');
+        get(/databases/$(database)/documents/companies/$(companyId)).data.get('adminEmail', '') == request.auth.token.get('email', '') &&
+        get(/databases/$(database)/documents/companies/$(companyId)).data.get('active', true) == true;
     }
     // Gestor Master: dono do produto, gerencia todas as empresas.
     // E-mail fixo (nao ha ainda uma equipe de superadmins, so o dono).
@@ -68,7 +72,11 @@ service cloud.firestore {
 
     // --- companies ---
     match /companies/{companyId} {
-      allow read: if isCompanyAdmin(companyId) || isSuperAdmin();
+      allow read: if isSuperAdmin()
+        || (isAuth() && exists(/databases/$(database)/documents/companies/$(companyId))
+            && (get(/databases/$(database)/documents/companies/$(companyId)).data.get('adminEmail','') == request.auth.token.get('email','')
+                || (isAuth() && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid))
+                    && myProfile().get('companyId','') == companyId)));
       allow write: if isSuperAdmin();
     }
 

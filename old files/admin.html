@@ -140,6 +140,10 @@
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Usuarios
     </div>
+    <div class="nav-item" onclick="showScreen('costcenters',this)">
+      <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+      Centros de Custo
+    </div>
     <div class="sidebar-bottom">
       <div class="user-info" id="admin-email">-</div>
       <button class="btn-logout" onclick="doLogout()">Sair</button>
@@ -267,16 +271,45 @@
       <div class="card">
         <div class="card-header">
           <p class="card-title">Usuarios cadastrados</p>
-          <button class="btn btn-primary" onclick="openAddUser()">+ Adicionar usuario</button>
+          <button class="btn btn-primary" onclick="openAddUser()">+ Convidar usuario</button>
         </div>
         <table>
-          <thead><tr><th>Nome</th><th>PIN</th><th>Perfil</th><th>Status</th><th>Acoes</th></tr></thead>
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Acoes</th></tr></thead>
           <tbody id="users-table"></tbody>
         </table>
         <div id="users-empty" class="empty-table" style="display:none">Nenhum usuario cadastrado</div>
       </div>
     </div>
 
+    <!-- CENTROS DE CUSTO -->
+    <div class="screen" id="screen-costcenters">
+      <p class="page-title">Centros de Custo</p>
+      <p class="page-sub">Gerencie os centros de custo disponiveis no app dos usuarios corporativos</p>
+      <div class="card">
+        <div class="card-header">
+          <p class="card-title">Centros cadastrados</p>
+          <button class="btn btn-primary" onclick="openAddCostCenter()">+ Novo centro de custo</button>
+        </div>
+        <table>
+          <thead><tr><th>Nome</th><th>Status</th><th>Acoes</th></tr></thead>
+          <tbody id="costcenters-table"></tbody>
+        </table>
+        <div id="costcenters-empty" class="empty-table" style="display:none">Nenhum centro de custo cadastrado</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL CENTRO DE CUSTO -->
+<div class="modal-ov" id="modal-costcenter" onclick="closeModalCostCenter(event)">
+  <div class="modal">
+    <p class="modal-title" id="cc-modal-title">Novo Centro de Custo</p>
+    <div class="form-group"><label>Nome *</label><input type="text" id="cc-name" placeholder="Ex: MATRIZ"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-costcenter')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCostCenter()">Salvar</button>
+    </div>
   </div>
 </div>
 
@@ -299,16 +332,13 @@
   </div>
 </div>
 
-<!-- MODAL ADICIONAR USUARIO -->
+<!-- MODAL CONVIDAR USUARIO -->
 <div class="modal-ov" id="modal-user" onclick="closeModalUser(event)">
   <div class="modal">
-    <p class="modal-title">Adicionar Usuario</p>
+    <p class="modal-title">Convidar Usuario</p>
     <div class="form-group"><label>Nome completo *</label><input type="text" id="u-name" placeholder="Ex: Felipe Santos"></div>
-    <div class="form-group">
-      <label>PIN inicial * (4 digitos)</label>
-      <input type="tel" id="u-pin" placeholder="Ex: 1234" maxlength="4" pattern="[0-9]{4}" style="font-family:var(--mono);font-size:20px;letter-spacing:8px">
-      <p style="font-size:11px;color:var(--text3);margin-top:4px">O usuario podera trocar o PIN no primeiro acesso.</p>
-    </div>
+    <div class="form-group"><label>E-mail *</label><input type="email" id="u-email" placeholder="Ex: felipe@sos360.com.br"></div>
+    <p style="font-size:11px;color:var(--text3);margin:-8px 0 8px">A conta e criada automaticamente e um e-mail para definir a senha e enviado pelo Firebase.</p>
     <div class="form-group"><label>Perfil</label>
       <select id="u-role">
         <option value="user">Usuario</option>
@@ -317,7 +347,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveUser()">Salvar</button>
+      <button class="btn btn-primary" id="save-user-btn" onclick="saveUser()">Criar conta e enviar e-mail</button>
     </div>
   </div>
 </div>
@@ -338,27 +368,38 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, setDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, setDoc, where, connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-const app = initializeApp({
+const firebaseConfig = {
   apiKey: "AIzaSyDdFODD9c1PHLKoVV0MqLmqSq2-A43xIDw",
   authDomain: "sos360-gastos.firebaseapp.com",
   projectId: "sos360-gastos",
   storageBucket: "sos360-gastos.firebasestorage.app",
   messagingSenderId: "269701265611",
   appId: "1:269701265611:web:71756f24407ba9003d434e"
-});
+};
+const app = initializeApp(firebaseConfig);
+const isLocalTest = (location.hostname === "localhost" || location.hostname === "127.0.0.1");
 
 const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+if (isLocalTest) {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  console.log("[EMULATOR] admin.html conectado aos emuladores locais");
+}
+
 // Admin emails
 const ADMIN_EMAILS = ["kakocbarros@gmail.com"];
+// Empresa gerida por este painel (ate a Fase 4 trazer o superadmin multi-empresa)
+const CURRENT_COMPANY_ID = "sos360";
 
 let allExpenses = [];
 let allUsers = [];
+let allCostCenters = [];
 let currentExpenseId = null;
 let currentUser = null;
 
@@ -421,8 +462,8 @@ function initApp() {
     updateUserFilters();
   }
 
-  // Corporate expenses (all users with PIN)
-  onSnapshot(query(collection(db,"expenses"), orderBy("createdAt","desc")), snap => {
+  // Corporate expenses (todos os usuarios da empresa)
+  onSnapshot(query(collection(db,"expenses"), where("companyId","==",CURRENT_COMPANY_ID), orderBy("createdAt","desc")), snap => {
     corpExpenses = snap.docs.map(d => ({...d.data(), id:d.id, mode:"corp"}));
     mergeAndRender();
   });
@@ -437,7 +478,6 @@ function initApp() {
   window.loadUsers = async function() {
     try {
       const snap = await getDocs(collection(db,"admin_users"));
-      console.log("[ADMIN] Users loaded:", snap.size);
       allUsers = snap.docs.map(d => ({...d.data(), id:d.id}));
       renderUsers();
     } catch(err) {
@@ -445,6 +485,13 @@ function initApp() {
     }
   }
   window.loadUsers();
+
+  // Load cost centers (ao vivo)
+  onSnapshot(query(collection(db,"cost_centers"), where("companyId","==",CURRENT_COMPANY_ID)), snap => {
+    allCostCenters = snap.docs.map(d => ({...d.data(), id:d.id}))
+      .sort((a,b) => (a.name||"").localeCompare(b.name||""));
+    renderCostCenters();
+  });
 }
 
 // ---- NAVIGATION ----
@@ -749,56 +796,82 @@ function renderUsers() {
   tbody.innerHTML = allUsers.map(u => `
     <tr>
       <td>${u.name||"-"}</td>
-      <td style="font-family:var(--mono);letter-spacing:4px">${u.pin ? "****" : "-"}</td>
+      <td>${u.email||"-"}</td>
       <td><span class="badge ${u.role==="admin"?"badge-active":"badge-pending"}">${u.role==="admin"?"Admin":"Usuario"}</span></td>
       <td><span class="badge ${u.blocked?"badge-blocked":"badge-approved"}">${u.blocked?"Bloqueado":"Ativo"}</span></td>
-      <td style="display:flex;gap:6px">
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="resendPasswordEmail('${u.email}')">Reenviar senha</button>
         <button class="btn btn-outline btn-sm" onclick="toggleBlock('${u.id}',${!!u.blocked})">${u.blocked?"Desbloquear":"Bloquear"}</button>
         <button class="btn btn-danger btn-sm" onclick="removeUser('${u.id}')">Remover</button>
       </td>
     </tr>`).join("");
 }
 
+window.resendPasswordEmail = async (email) => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    toast("E-mail de definicao de senha reenviado para " + email);
+  } catch(err) {
+    toast("Erro: " + err.message);
+  }
+};
+
 window.openAddUser = () => {
   document.getElementById("u-name").value="";
-  document.getElementById("u-pin").value="";
+  document.getElementById("u-email").value="";
   document.getElementById("u-role").value="user";
   document.getElementById("modal-user").classList.add("open");
 };
 
+function generateTempPassword() {
+  return Math.random().toString(36).slice(-8) + "A1!";
+}
+
 window.saveUser = async () => {
   const name = document.getElementById("u-name").value.trim();
-  const pinRaw = document.getElementById("u-pin").value.trim();
-  const pin = String(pinRaw);
+  const email = document.getElementById("u-email").value.trim().toLowerCase();
   const role = document.getElementById("u-role").value;
   if (!name) { toast("Informe o nome do usuario"); return; }
-  if (!pin || pin.length !== 4 || !/^[0-9]{4}$/.test(pin)) { toast("PIN deve ter exatamente 4 digitos numericos"); return; }
+  if (!email || !email.includes("@")) { toast("Informe um e-mail valido"); return; }
+  const btn = document.getElementById("save-user-btn");
+  btn.disabled = true; btn.textContent = "Criando...";
+  let secondaryApp = null;
   try {
-    // Check if PIN already exists
-    const snap = await getDocs(collection(db,"admin_users"));
-    let pinExists = false;
-    let pinOwner = "";
-    snap.forEach(d => {
-      const stored = String(d.data().pin).trim();
-      if (stored === pin) { pinExists = true; pinOwner = d.data().name; }
-    });
-    if (pinExists) {
-      toast("PIN " + pin + " ja esta em uso por " + pinOwner + ". Escolha outro.");
+    const existingSnap = await getDocs(query(collection(db,"admin_users"), where("email","==",email)));
+    if (!existingSnap.empty) {
+      toast("Ja existe um usuario cadastrado com esse e-mail.");
       return;
     }
-    const docRef = await addDoc(collection(db,"admin_users"), {
-      name, pin, role,
+    secondaryApp = initializeApp(firebaseConfig, "secondary-" + Date.now());
+    const secondaryAuth = getAuth(secondaryApp);
+    if (isLocalTest) {
+      connectAuthEmulator(secondaryAuth, "http://127.0.0.1:9099", { disableWarnings: true });
+    }
+    const tempPassword = generateTempPassword();
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, tempPassword);
+    const uid = cred.user.uid;
+    await sendPasswordResetEmail(secondaryAuth, email);
+    await signOut(secondaryAuth);
+
+    await setDoc(doc(db,"admin_users", uid), {
+      name, email, role,
+      companyId: CURRENT_COMPANY_ID,
       blocked: false,
-      mustChangePin: true,
       createdAt: new Date().toISOString(),
       createdBy: currentUser.email
     });
-    toast("Usuario " + name + " adicionado! PIN inicial: " + pin);
+    toast("Conta criada! E-mail de definicao de senha enviado para " + email);
     closeModal("modal-user");
     await window.loadUsers();
   } catch(err) {
     console.error("[SAVE USER] Error:", err);
-    toast("Erro ao salvar: " + err.message);
+    if (err.code === "auth/email-already-in-use") {
+      toast("Ja existe uma conta no Firebase Auth com esse e-mail.");
+    } else {
+      toast("Erro ao criar conta: " + err.message);
+    }
+  } finally {
+    btn.disabled = false; btn.textContent = "Criar conta e enviar e-mail";
   }
 };
 
@@ -813,6 +886,98 @@ window.removeUser = async id => {
   await deleteDoc(doc(db,"admin_users",id));
   toast("Usuario removido!");
   loadUsers();
+};
+
+// ---- CENTROS DE CUSTO ----
+const DEFAULT_COST_CENTERS = ["MATRIZ","SALOBO","S11D","CARAJAS","SAO LUIS - SEDE","SAO LUIS - VALE","PARAGOMINAS - ETE","PARAGOMINAS - CIP","SANTAREM","MARABA"];
+
+function renderCostCenters() {
+  const tbody = document.getElementById("costcenters-table");
+  const empty = document.getElementById("costcenters-empty");
+  if (!allCostCenters.length) {
+    tbody.innerHTML = "";
+    empty.style.display = "block";
+    empty.innerHTML = 'Nenhum centro de custo cadastrado. <a href="#" onclick="seedDefaultCostCenters();return false" style="color:var(--accent)">Importar os 10 centros padrao da SOS360</a>';
+    return;
+  }
+  empty.style.display = "none";
+  tbody.innerHTML = allCostCenters.map(c => `
+    <tr>
+      <td>${c.name}</td>
+      <td><span class="badge ${c.active===false?"badge-blocked":"badge-approved"}">${c.active===false?"Inativo":"Ativo"}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-outline btn-sm" onclick="openEditCostCenter('${c.id}')">Editar</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleCostCenterActive('${c.id}',${c.active===false})">${c.active===false?"Ativar":"Desativar"}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCostCenter('${c.id}')">Excluir</button>
+      </td>
+    </tr>`).join("");
+}
+
+let editingCostCenterId = null;
+
+window.openAddCostCenter = () => {
+  editingCostCenterId = null;
+  document.getElementById("cc-modal-title").textContent = "Novo Centro de Custo";
+  document.getElementById("cc-name").value = "";
+  document.getElementById("modal-costcenter").classList.add("open");
+};
+
+window.openEditCostCenter = (id) => {
+  const c = allCostCenters.find(x => x.id === id);
+  if (!c) return;
+  editingCostCenterId = id;
+  document.getElementById("cc-modal-title").textContent = "Editar Centro de Custo";
+  document.getElementById("cc-name").value = c.name || "";
+  document.getElementById("modal-costcenter").classList.add("open");
+};
+
+window.closeModalCostCenter = ev => { if(ev.target===document.getElementById("modal-costcenter")) closeModal("modal-costcenter"); };
+
+window.saveCostCenter = async () => {
+  const name = document.getElementById("cc-name").value.trim().toUpperCase();
+  if (!name) { toast("Informe o nome do centro de custo"); return; }
+  try {
+    if (editingCostCenterId) {
+      await updateDoc(doc(db,"cost_centers",editingCostCenterId), { name });
+      toast("Centro de custo atualizado!");
+    } else {
+      const dup = allCostCenters.some(c => (c.name||"").toUpperCase() === name);
+      if (dup) { toast("Ja existe um centro de custo com esse nome."); return; }
+      await addDoc(collection(db,"cost_centers"), {
+        name, companyId: CURRENT_COMPANY_ID, active: true,
+        createdAt: new Date().toISOString(), createdBy: currentUser.email
+      });
+      toast("Centro de custo criado!");
+    }
+    closeModal("modal-costcenter");
+  } catch(err) {
+    toast("Erro: " + err.message);
+  }
+};
+
+window.toggleCostCenterActive = async (id, activate) => {
+  await updateDoc(doc(db,"cost_centers",id), { active: activate });
+  toast(activate ? "Centro de custo ativado!" : "Centro de custo desativado!");
+};
+
+window.deleteCostCenter = async (id) => {
+  if (!confirm("Excluir este centro de custo? Lancamentos ja feitos com ele nao serao afetados.")) return;
+  await deleteDoc(doc(db,"cost_centers",id));
+  toast("Centro de custo excluido!");
+};
+
+window.seedDefaultCostCenters = async () => {
+  try {
+    for (const name of DEFAULT_COST_CENTERS) {
+      await addDoc(collection(db,"cost_centers"), {
+        name, companyId: CURRENT_COMPANY_ID, active: true,
+        createdAt: new Date().toISOString(), createdBy: currentUser.email
+      });
+    }
+    toast("Centros de custo padrao importados!");
+  } catch(err) {
+    toast("Erro: " + err.message);
+  }
 };
 
 // ---- TOAST ----

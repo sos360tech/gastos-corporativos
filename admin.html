@@ -411,6 +411,18 @@ onAuthStateChanged(auth, async user => {
       showError("Acesso negado. Apenas administradores podem acessar este painel.");
       return;
     }
+    try {
+      const companySnap = await getDoc(doc(db,"companies",CURRENT_COMPANY_ID));
+      if (!companySnap.exists() || companySnap.data().active === false) {
+        await signOut(auth);
+        showError("Esta empresa esta inativa. Fale com o Gestor Master.");
+        return;
+      }
+    } catch(err) {
+      await signOut(auth);
+      showError("Erro ao verificar status da empresa: " + err.message);
+      return;
+    }
     currentUser = user;
     document.getElementById("admin-email").textContent = user.email;
     document.getElementById("sc-login").style.display = "none";
@@ -840,6 +852,12 @@ window.saveUser = async () => {
     const existingSnap = await getDocs(query(collection(db,"admin_users"), where("email","==",email)));
     if (!existingSnap.empty) {
       toast("Ja existe um usuario cadastrado com esse e-mail.");
+      return;
+    }
+    const companySnap = await getDoc(doc(db,"companies",CURRENT_COMPANY_ID));
+    const maxUsers = companySnap.exists() ? (companySnap.data().maxUsers || 0) : 0;
+    if (maxUsers && allUsers.length >= maxUsers) {
+      toast("Limite de " + maxUsers + " usuarios do seu plano atingido. Fale com o Gestor Master para aumentar.");
       return;
     }
     secondaryApp = initializeApp(firebaseConfig, "secondary-" + Date.now());
