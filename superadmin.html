@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SOS360 - Gestor Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f5f6fa;--bg2:#ffffff;--bg3:#eef0f5;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);--text:#1a1a2e;--text2:#555;--text3:#999;--accent:#7C3AED;--accent-dim:rgba(124,58,237,0.1);--accent-text:#fff;--danger:#dc2626;--success:#16a34a;--warning:#d97706;--radius:12px;--radius-sm:8px;--font:'Sora',sans-serif;--mono:'DM Mono',monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+  /* LOGIN */
+  #sc-login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px}
+  .login-box{background:var(--bg2);border-radius:var(--radius);padding:40px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+  .login-logo{width:56px;height:56px;background:var(--accent);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 20px;color:#fff;font-weight:700}
+  .login-title{font-size:22px;font-weight:700;text-align:center;margin-bottom:6px}
+  .login-sub{font-size:13px;color:var(--text3);text-align:center;margin-bottom:32px}
+  .btn-google{width:100%;padding:13px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .15s}
+  .btn-google:hover{background:var(--bg3)}
+  #login-error{color:var(--danger);font-size:13px;margin-top:16px;text-align:center;display:none}
+  /* LAYOUT */
+  #sc-app{display:none}
+  .sidebar{position:fixed;top:0;left:0;width:240px;height:100vh;background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
+  .sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .sidebar-logo .ico{width:36px;height:36px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;color:#fff}
+  .sidebar-logo .name{font-size:14px;font-weight:600;line-height:1.3}
+  .sidebar-logo .sub{font-size:11px;color:var(--text3)}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+  .nav-item:hover{background:var(--bg3);color:var(--text)}
+  .nav-item.active{background:var(--accent-dim);color:var(--accent);border-left-color:var(--accent);font-weight:500}
+  .nav-item svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+  .user-info{font-size:12px;color:var(--text3);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btn-logout{width:100%;padding:8px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:none;color:var(--danger);font-family:var(--font);font-size:12px;cursor:pointer}
+  .main{margin-left:240px;padding:32px;min-height:100vh}
+  .page-title{font-size:22px;font-weight:700;margin-bottom:6px}
+  .page-sub{font-size:13px;color:var(--text3);margin-bottom:28px}
+  /* CARDS */
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+  .stat-card{background:var(--bg2);border-radius:var(--radius);padding:20px;border:1px solid var(--border)}
+  .stat-card .lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+  .stat-card .val{font-size:24px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em}
+  .stat-card .sub{font-size:12px;color:var(--text3);margin-top:4px}
+  .stat-card.blue .val{color:var(--accent)}
+  .stat-card.green .val{color:var(--success)}
+  .stat-card.red .val{color:var(--danger)}
+  .stat-card.orange .val{color:var(--warning)}
+  /* TABLE */
+  .card{background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin-bottom:24px}
+  .card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .card-title{font-size:15px;font-weight:600}
+  .btn{padding:7px 14px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:opacity .15s}
+  .btn:active{opacity:.8}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-outline{background:none;border:1px solid var(--border2);color:var(--text)}
+  .btn-danger{background:var(--danger);color:#fff}
+  .btn-success{background:var(--success);color:#fff}
+  .btn-sm{padding:5px 10px;font-size:12px}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg)}
+  td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--bg3)}
+  .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:500}
+  .badge-active{background:rgba(22,163,74,.1);color:var(--success)}
+  .badge-blocked{background:rgba(220,38,38,.1);color:var(--danger)}
+  .badge-plan{background:rgba(124,58,237,.1);color:var(--accent)}
+  .empty-table{text-align:center;padding:48px;color:var(--text3);font-size:14px}
+  /* MODAL */
+  .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal-ov.open{display:flex}
+  .modal{background:var(--bg2);border-radius:var(--radius);padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+  .modal-title{font-size:18px;font-weight:600;margin-bottom:20px}
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
+  .form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none}
+  .form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+  .form-group small{display:block;margin-top:4px;color:var(--text3);font-size:11px}
+  .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:24px}
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
+  .toast.show{opacity:1}
+  @media(max-width:900px){
+    .sidebar{width:200px}
+    .main{margin-left:200px;padding:20px}
+    .stats-grid{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="sc-login">
+  <div class="login-box">
+    <div class="login-logo">M</div>
+    <p class="login-title">Gestor Master</p>
+    <p class="login-sub">SOS360 Gastos - painel de gestao de empresas</p>
+    <button class="btn-google" onclick="doLogin()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Entrar com Google
+    </button>
+    <p id="login-error"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="sc-app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="ico">M</div>
+      <div><p class="name">Gestor Master</p><p class="sub">SOS360 Gastos</p></div>
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Empresas
+    </div>
+    <div class="sidebar-bottom">
+      <div class="user-info" id="admin-email">-</div>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <p class="page-title">Empresas</p>
+    <p class="page-sub">Gerencie as empresas clientes do SOS360 Gastos</p>
+
+    <div class="stats-grid">
+      <div class="stat-card blue"><p class="lbl">Empresas ativas</p><p class="val" id="stat-companies">0</p></div>
+      <div class="stat-card green"><p class="lbl">Total de usuarios</p><p class="val" id="stat-users">0</p></div>
+      <div class="stat-card orange"><p class="lbl">Empresas inativas</p><p class="val" id="stat-inactive">0</p></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <p class="card-title">Empresas cadastradas</p>
+        <button class="btn btn-primary" onclick="openAddCompany()">+ Nova empresa</button>
+      </div>
+      <table>
+        <thead><tr><th>Empresa</th><th>ID</th><th>Admin</th><th>Plano</th><th>Usuarios</th><th>Status</th><th>Acoes</th></tr></thead>
+        <tbody id="companies-table"></tbody>
+      </table>
+      <div id="companies-empty" class="empty-table" style="display:none">Nenhuma empresa cadastrada</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPRESA -->
+<div class="modal-ov" id="modal-company" onclick="closeModalCompany(event)">
+  <div class="modal">
+    <p class="modal-title" id="co-modal-title">Nova Empresa</p>
+    <div class="form-group">
+      <label>ID da empresa * (usado internamente, sem espacos)</label>
+      <input type="text" id="co-id" placeholder="Ex: sos360">
+      <small>Nao pode ser alterado depois de criado.</small>
+    </div>
+    <div class="form-group"><label>Nome da empresa *</label><input type="text" id="co-name" placeholder="Ex: SOS360"></div>
+    <div class="form-group">
+      <label>E-mail do administrador *</label>
+      <input type="email" id="co-admin-email" placeholder="Ex: admin@empresa.com">
+      <small>Quem acessar o admin.html com essa conta Google vira administrador desta empresa.</small>
+    </div>
+    <div class="form-group"><label>Plano</label>
+      <select id="co-plan">
+        <option value="basic">Basico</option>
+        <option value="pro">Pro</option>
+        <option value="enterprise">Enterprise</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Limite de usuarios</label><input type="number" id="co-max-users" value="10" min="1"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-company')">Cancelar</button>
+      <button class="btn btn-primary" id="save-company-btn" onclick="saveCompany()">Salvar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, onSnapshot, connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDdFODD9c1PHLKoVV0MqLmqSq2-A43xIDw",
+  authDomain: "sos360-gastos.firebaseapp.com",
+  projectId: "sos360-gastos",
+  storageBucket: "sos360-gastos.firebasestorage.app",
+  messagingSenderId: "269701265611",
+  appId: "1:269701265611:web:71756f24407ba9003d434e"
+};
+const app = initializeApp(firebaseConfig);
+const isLocalTest = (location.hostname === "localhost" || location.hostname === "127.0.0.1");
+
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+if (isLocalTest) {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  console.log("[EMULATOR] superadmin.html conectado aos emuladores locais");
+}
+
+// Unico e-mail com acesso a este painel
+const SUPERADMIN_EMAIL = "kakocbarros@gmail.com";
+
+let currentUser = null;
+let allCompanies = [];
+let allAdminUsers = [];
+let editingCompanyId = null;
+
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    if (user.email !== SUPERADMIN_EMAIL) {
+      document.getElementById("login-error").textContent = "Acesso negado. Esta conta nao tem permissao de Gestor Master.";
+      document.getElementById("login-error").style.display = "block";
+      await signOut(auth);
+      return;
+    }
+    currentUser = user;
+    document.getElementById("sc-login").style.display = "none";
+    document.getElementById("sc-app").style.display = "block";
+    document.getElementById("admin-email").textContent = user.email;
+    subscribeData();
+  } else {
+    currentUser = null;
+    document.getElementById("sc-login").style.display = "flex";
+    document.getElementById("sc-app").style.display = "none";
+  }
+});
+
+window.doLogin = async () => {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    document.getElementById("login-error").textContent = "Erro no login: " + e.message;
+    document.getElementById("login-error").style.display = "block";
+  }
+};
+
+window.doLogout = async () => {
+  if (!confirm("Deseja sair?")) return;
+  await signOut(auth);
+};
+
+function subscribeData() {
+  onSnapshot(collection(db,"companies"), snap => {
+    allCompanies = snap.docs.map(d => ({...d.data(), id:d.id}))
+      .sort((a,b) => (a.name||"").localeCompare(b.name||""));
+    renderCompanies();
+  }, err => {
+    console.error("[SUPERADMIN] Erro ao ler empresas:", err.code, err.message);
+    toast("Erro ao carregar empresas: " + (err.code||err.message));
+  });
+
+  onSnapshot(collection(db,"admin_users"), snap => {
+    allAdminUsers = snap.docs.map(d => d.data());
+    renderCompanies();
+  }, err => {
+    console.error("[SUPERADMIN] Erro ao ler usuarios:", err.code, err.message);
+  });
+}
+
+function userCountFor(companyId) {
+  return allAdminUsers.filter(u => u.companyId === companyId).length;
+}
+
+function renderCompanies() {
+  const tbody = document.getElementById("companies-table");
+  const empty = document.getElementById("companies-empty");
+
+  document.getElementById("stat-companies").textContent = allCompanies.filter(c => c.active !== false).length;
+  document.getElementById("stat-inactive").textContent = allCompanies.filter(c => c.active === false).length;
+  document.getElementById("stat-users").textContent = allAdminUsers.length;
+
+  if (!allCompanies.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
+  empty.style.display="none";
+  tbody.innerHTML = allCompanies.map(c => `
+    <tr>
+      <td>${c.name||"-"}</td>
+      <td style="font-family:var(--mono);color:var(--text3)">${c.id}</td>
+      <td>${c.adminEmail||"-"}</td>
+      <td><span class="badge badge-plan">${(c.plan||"basic").toUpperCase()}</span></td>
+      <td>${userCountFor(c.id)}${c.maxUsers?" / "+c.maxUsers:""}</td>
+      <td><span class="badge ${c.active===false?"badge-blocked":"badge-active"}">${c.active===false?"Inativa":"Ativa"}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-outline btn-sm" onclick="openEditCompany('${c.id}')">Editar</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleCompanyActive('${c.id}',${c.active===false})">${c.active===false?"Ativar":"Desativar"}</button>
+      </td>
+    </tr>`).join("");
+}
+
+window.openAddCompany = () => {
+  editingCompanyId = null;
+  document.getElementById("co-modal-title").textContent = "Nova Empresa";
+  document.getElementById("co-id").value = "";
+  document.getElementById("co-id").disabled = false;
+  document.getElementById("co-name").value = "";
+  document.getElementById("co-admin-email").value = "";
+  document.getElementById("co-plan").value = "basic";
+  document.getElementById("co-max-users").value = "10";
+  document.getElementById("modal-company").classList.add("open");
+};
+
+window.openEditCompany = (id) => {
+  const c = allCompanies.find(x => x.id === id);
+  if (!c) return;
+  editingCompanyId = id;
+  document.getElementById("co-modal-title").textContent = "Editar Empresa";
+  document.getElementById("co-id").value = id;
+  document.getElementById("co-id").disabled = true;
+  document.getElementById("co-name").value = c.name||"";
+  document.getElementById("co-admin-email").value = c.adminEmail||"";
+  document.getElementById("co-plan").value = c.plan||"basic";
+  document.getElementById("co-max-users").value = c.maxUsers||10;
+  document.getElementById("modal-company").classList.add("open");
+};
+
+window.closeModalCompany = ev => { if(ev.target===document.getElementById("modal-company")) closeModal("modal-company"); };
+window.closeModal = id => document.getElementById(id).classList.remove("open");
+
+window.saveCompany = async () => {
+  const id = document.getElementById("co-id").value.trim().toLowerCase().replace(/[^a-z0-9-]/g,"");
+  const name = document.getElementById("co-name").value.trim();
+  const adminEmail = document.getElementById("co-admin-email").value.trim().toLowerCase();
+  const plan = document.getElementById("co-plan").value;
+  const maxUsers = parseInt(document.getElementById("co-max-users").value) || 10;
+  if (!id) { toast("Informe um ID valido para a empresa (letras, numeros e hifen)"); return; }
+  if (!name) { toast("Informe o nome da empresa"); return; }
+  if (!adminEmail || !adminEmail.includes("@")) { toast("Informe um e-mail de administrador valido"); return; }
+
+  const btn = document.getElementById("save-company-btn");
+  btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    if (editingCompanyId) {
+      await updateDoc(doc(db,"companies",editingCompanyId), { name, adminEmail, plan, maxUsers });
+      toast("Empresa atualizada!");
+    } else {
+      const existing = await getDoc(doc(db,"companies",id));
+      if (existing.exists()) { toast("Ja existe uma empresa com esse ID."); return; }
+      await setDoc(doc(db,"companies",id), {
+        name, adminEmail, plan, maxUsers,
+        active: true,
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser.email
+      });
+      toast("Empresa criada!");
+    }
+    closeModal("modal-company");
+  } catch(err) {
+    console.error("[SAVE COMPANY] Error:", err);
+    toast("Erro ao salvar: " + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Salvar";
+  }
+};
+
+window.toggleCompanyActive = async (id, activate) => {
+  try {
+    await updateDoc(doc(db,"companies",id), { active: activate });
+    toast(activate ? "Empresa ativada!" : "Empresa desativada!");
+  } catch(err) {
+    toast("Erro: " + err.message);
+  }
+};
+
+function toast(msg) {
+  const t = document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2800);
+}
+</script>
+</body>
+</html>

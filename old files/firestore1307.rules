@@ -60,16 +60,11 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/companies/$(companyId)) &&
         get(/databases/$(database)/documents/companies/$(companyId)).data.get('adminEmail', '') == request.auth.token.get('email', '');
     }
-    // Gestor Master: dono do produto, gerencia todas as empresas.
-    // E-mail fixo (nao ha ainda uma equipe de superadmins, so o dono).
-    function isSuperAdmin() {
-      return isAuth() && request.auth.token.get('email', '') == 'kakocbarros@gmail.com';
-    }
 
     // --- companies ---
     match /companies/{companyId} {
-      allow read: if isCompanyAdmin(companyId) || isSuperAdmin();
-      allow write: if isSuperAdmin();
+      allow read: if isCompanyAdmin(companyId);
+      allow write: if false;
     }
 
     // --- admin_users: perfil real, doc ID = uid do Firebase Auth ---
