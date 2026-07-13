@@ -392,10 +392,9 @@ if (isLocalTest) {
   console.log("[EMULATOR] admin.html conectado aos emuladores locais");
 }
 
-// Admin emails
-const ADMIN_EMAILS = ["kakocbarros@gmail.com"];
-// Empresa gerida por este painel (ate a Fase 4 trazer o superadmin multi-empresa)
-const CURRENT_COMPANY_ID = "sos360";
+// Empresa gerida por este painel - descoberta dinamicamente no login,
+// buscando qual empresa tem esse e-mail cadastrado como adminEmail.
+let CURRENT_COMPANY_ID = null;
 
 let allExpenses = [];
 let allUsers = [];
@@ -406,21 +405,23 @@ let currentUser = null;
 // ---- AUTH ----
 onAuthStateChanged(auth, async user => {
   if (user) {
-    if (!ADMIN_EMAILS.includes(user.email)) {
-      await signOut(auth);
-      showError("Acesso negado. Apenas administradores podem acessar este painel.");
-      return;
-    }
     try {
-      const companySnap = await getDoc(doc(db,"companies",CURRENT_COMPANY_ID));
-      if (!companySnap.exists() || companySnap.data().active === false) {
+      const companyQuery = await getDocs(query(collection(db,"companies"), where("adminEmail","==",user.email)));
+      if (companyQuery.empty) {
+        await signOut(auth);
+        showError("Acesso negado. Este e-mail nao e administrador de nenhuma empresa.");
+        return;
+      }
+      const companyDoc = companyQuery.docs[0];
+      if (companyDoc.data().active === false) {
         await signOut(auth);
         showError("Esta empresa esta inativa. Fale com o Gestor Master.");
         return;
       }
+      CURRENT_COMPANY_ID = companyDoc.id;
     } catch(err) {
       await signOut(auth);
-      showError("Erro ao verificar status da empresa: " + err.message);
+      showError("Erro ao verificar empresa: " + err.message);
       return;
     }
     currentUser = user;
