@@ -490,7 +490,7 @@ function initApp() {
   // Load users
   window.loadUsers = async function() {
     try {
-      const snap = await getDocs(collection(db,"admin_users"));
+      const snap = await getDocs(query(collection(db,"admin_users"), where("companyId","==",CURRENT_COMPANY_ID)));
       allUsers = snap.docs.map(d => ({...d.data(), id:d.id}));
       renderUsers();
     } catch(err) {
@@ -908,15 +908,13 @@ window.removeUser = async id => {
 };
 
 // ---- CENTROS DE CUSTO ----
-const DEFAULT_COST_CENTERS = ["MATRIZ","SALOBO","S11D","CARAJAS","SAO LUIS - SEDE","SAO LUIS - VALE","PARAGOMINAS - ETE","PARAGOMINAS - CIP","SANTAREM","MARABA"];
-
 function renderCostCenters() {
   const tbody = document.getElementById("costcenters-table");
   const empty = document.getElementById("costcenters-empty");
   if (!allCostCenters.length) {
     tbody.innerHTML = "";
     empty.style.display = "block";
-    empty.innerHTML = 'Nenhum centro de custo cadastrado. <a href="#" onclick="seedDefaultCostCenters();return false" style="color:var(--accent)">Importar os 10 centros padrao da SOS360</a>';
+    empty.textContent = "Nenhum centro de custo cadastrado.";
     return;
   }
   empty.style.display = "none";
@@ -983,20 +981,6 @@ window.deleteCostCenter = async (id) => {
   if (!confirm("Excluir este centro de custo? Lancamentos ja feitos com ele nao serao afetados.")) return;
   await deleteDoc(doc(db,"cost_centers",id));
   toast("Centro de custo excluido!");
-};
-
-window.seedDefaultCostCenters = async () => {
-  try {
-    for (const name of DEFAULT_COST_CENTERS) {
-      await addDoc(collection(db,"cost_centers"), {
-        name, companyId: CURRENT_COMPANY_ID, active: true,
-        createdAt: new Date().toISOString(), createdBy: currentUser.email
-      });
-    }
-    toast("Centros de custo padrao importados!");
-  } catch(err) {
-    toast("Erro: " + err.message);
-  }
 };
 
 // ---- TOAST ----
